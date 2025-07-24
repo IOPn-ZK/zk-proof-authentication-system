@@ -116,8 +116,8 @@ All endpoints except group info/members require a valid session cookie (Google l
 - The signal can be a number.
 - Circuit files (semaphore.wasm, semaphore.zkey) must exist in ```public/semaphore/20/```
 #### Example request to generate a proof:
+```POST /api/zk/proof```
 ```json
-POST /api/zk/proof
 {
   "signal": 1
 }
@@ -126,10 +126,10 @@ POST /api/zk/proof
 ### Proof Verification:
 Pass the full proof object and the correct tree depth (e.g., 20) to ```/api/zk/verify```
 #### Example request to verify a proof:
+```POST /api/zk/verify```
 ```json
-POST /api/zk/verify
 {
-  "fullProof": { ... }
+  "fullProof": {" "}
 }
 ```
 

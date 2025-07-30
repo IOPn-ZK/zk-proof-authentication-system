@@ -27,10 +27,19 @@ export default async function handler(req, res) {
       if (!session || !session.user || !session.user.email) {
         return res.status(401).json({ message: 'Unauthorized: Please log in' });
       }
+      
       // For demo: use email as seed (not secure for prod!)
       const identity = createIdentity(session.user.email);
-      // TODO: Store identity in session or encrypted cookie
-      res.status(200).json({ identityCommitment: identity.commitment.toString() });
+      
+      // Return both commitment and full identity data
+      res.status(200).json({ 
+        identityCommitment: identity.commitment.toString(),
+        identityData: {
+          trapdoor: identity.trapdoor.toString(),
+          nullifier: identity.nullifier.toString(),
+          commitment: identity.commitment.toString()
+        }
+      });
     } catch (error) {
       res.status(500).json({ message: 'Error generating identity', error: error.message });
     }

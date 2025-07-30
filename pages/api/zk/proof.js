@@ -21,33 +21,33 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  try {
-    const session = await getServerSession(req, res, {
-      providers: [
-        GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    try {
+      const session = await getServerSession(req, res, {
+        providers: [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           authorization: { params: { prompt: "select_account" } },
-        }),
-      ],
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+          }),
+        ],
+        secret: process.env.NEXTAUTH_SECRET,
+      });
 
     if (!session || !session.user?.email) {
       return res.status(401).json({ message: "Unauthorized: Please log in" });
-    }
+      }
 
-    const { signal } = req.body;
-    if (!signal) {
+      const { signal } = req.body;
+      if (!signal) {
       return res.status(400).json({ message: "Signal is required" });
-    }
-
+      }
+      
     // 1. Create identity
-    const identity = createIdentity(session.user.email);
+      const identity = createIdentity(session.user.email);
     const commitment = identity.commitment.toString();
-
+      
     // 2. Load group data
-    const groupData = await getGroupData();
+      const groupData = await getGroupData();
 
     // 3. Check membership
     if (!groupData.members.includes(commitment)) {
@@ -110,11 +110,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ fullProof });
 
-  } catch (error) {
+    } catch (error) {
     console.error("Unhandled error during proof generation:", error);
-    res.status(500).json({
+      res.status(500).json({ 
       message: "Unhandled error generating proof",
-      error: error.message
-    });
+        error: error.message 
+      });
+    } 
   }
-}

@@ -1,16 +1,16 @@
 # Semaphore OAuth Demo
 
-A Next.js application demonstrating Semaphore zero-knowledge proofs with Google OAuth authentication.
+A Next.js application demonstrating Semaphore zero-knowledge proofs with Auth0 authentication.
 
-## 🚀 Tech Stack
+## Tech Stack
 
-- **Frontend**: Next.js 15.3.5, React, Tailwind CSS
-- **Authentication**: NextAuth.js with Google OAuth
+- **Frontend**: Next.js 14.2.31, React, Tailwind CSS 4
+- **Authentication**: Auth0 NextJS SDK
 - **Zero-Knowledge Proofs**: Semaphore Protocol v3.15.2
 - **Backend**: Next.js API Routes
 - **Storage**: Local JSON files for group data
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 semaphore-oauth-demo/
@@ -24,7 +24,7 @@ semaphore-oauth-demo/
 ├── pages/
 │   ├── api/
 │   │   ├── auth/
-│   │   │   └── [...nextauth].js  # NextAuth configuration
+│   │   │   └── [...auth0].js  # Auth0 configuration
 │   │   └── zk/
 │   │       ├── group/
 │   │       │   ├── full.js       # GET group details
@@ -43,12 +43,13 @@ semaphore-oauth-demo/
 └── package.json
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Authentication
-- **`GET /api/auth/session`** - Get current session
-- **`POST /api/auth/signin`** - Sign in with Google
-- **`POST /api/auth/signout`** - Sign out
+- **`GET /api/auth/login`** - Initiate Auth0 login
+- **`GET /api/auth/logout`** - Sign out
+- **`GET /api/auth/callback`** - Auth0 callback handler
+- **`GET /api/auth/me`** - Get current user session
 
 ### Group Management
 - **`GET /api/zk/group/full`** - Get complete group data
@@ -71,24 +72,25 @@ semaphore-oauth-demo/
   - Body: `{ fullProof }`
   - Returns: `{ valid: boolean }`
 
-## 🔄 API Flow Order
+## API Flow Order
 
-1. **Authentication**: User signs in with Google OAuth
+1. **Authentication**: User signs in with Auth0
 2. **Initialize Server Identity**: Create server-side identity using user's email
 3. **Join Group**: Add identity commitment to the Semaphore group
 4. **Show Group Details**: Fetch and display group information
 5. **Generate & Verify Proof**: Create and verify zero-knowledge proof
 6. **Complete**: Flow completed successfully
 
-## 🧪 Testing Instructions
+## Testing Instructions
 
 ### 1. Setup Environment Variables
 Create a `.env.local` file:
 ```env
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
+AUTH0_SECRET=your_auth0_secret
+AUTH0_BASE_URL=http://localhost:3000
+AUTH0_ISSUER_BASE_URL=https://your-domain.auth0.com
+AUTH0_CLIENT_ID=your_auth0_client_id
+AUTH0_CLIENT_SECRET=your_auth0_client_secret
 ```
 
 ### 2. Install Dependencies
@@ -103,7 +105,7 @@ npm run dev
 
 ### 4. Test Frontend Flow
 1. Open `http://localhost:3000`
-2. Click "Login with Google"
+2. Click "Login with Auth0"
 3. After authentication, you'll see a step-by-step interface:
    - **Step 1**: Initialize Server Identity - Create a server-side identity
    - **Step 2**: Join Group - Add identity commitment to the group
@@ -168,17 +170,17 @@ Content-Type: application/json
 }
 ```
 
-## 🔧 Key Features
+## Key Features
 
 ### Frontend Integration
-- **Google OAuth**: Seamless authentication flow
+- **Auth0 Authentication**: Seamless authentication flow with Auth0
 - **Identity Management**: Automatic identity creation and storage
 - **Group Management**: Manual group joining (no auto-join)
 - **Proof Generation**: Client-side proof generation with Semaphore
 - **Real-time Logs**: Detailed logging of all operations
 
 ### Backend Features
-- **Session Management**: NextAuth.js session handling
+- **Session Management**: Auth0 NextJS SDK session handling
 - **Group Persistence**: JSON file-based group storage
 - **Proof Generation**: Server-side proof generation with SNARK artifacts
 - **Proof Verification**: Off-chain proof verification
@@ -190,7 +192,7 @@ Content-Type: application/json
 - **Session Validation**: Server-side session verification
 - **Input Validation**: Comprehensive input validation for all endpoints
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -218,24 +220,17 @@ Content-Type: application/json
 4. **Clear Storage**: Clear localStorage and try again
 5. **Reset Group**: Use the "Reset Group" button to start fresh
 
-## 📚 Dependencies
+## Dependencies
 
 ```json
 {
+  "@auth0/nextjs-auth0": "^3.8.0",
   "@semaphore-protocol/group": "^3.15.2",
   "@semaphore-protocol/identity": "^3.15.2",
   "@semaphore-protocol/proof": "^3.15.2",
-  "next": "^15.3.5",
-  "next-auth": "^4.24.5",
-  "react": "^18.3.1"
+  "@zk-kit/utils": "^1.4.1",
+  "next": "^14.2.31",
+  "react": "^18.3.1",
+  "react-dom": "^18.3.1"
 }
 ```
-
-## 🎯 Next Steps
-
-- [ ] Add on-chain proof verification
-- [ ] Implement group member removal
-- [ ] Add proof history tracking
-- [ ] Implement multiple group support
-- [ ] Add proof export/import functionality
-- [ ] Implement proof sharing between users

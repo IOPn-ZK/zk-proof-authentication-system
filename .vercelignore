@@ -1,0 +1,12 @@
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.DS_Store
+*.log
+.git
+.gitignore
+README.md
+.vscode
+.qodo
+.zencoder

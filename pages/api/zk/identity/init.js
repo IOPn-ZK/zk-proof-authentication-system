@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
+import { getSession } from '@auth0/nextjs-auth0';
 import { createIdentity } from '../../../../lib/semaphore/identity';
 
 export default async function handler(req, res) {
@@ -14,16 +13,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const session = await getServerSession(req, res, {
-        providers: [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            authorization: { params: { prompt: 'select_account' } },
-          }),
-        ],
-        secret: process.env.NEXTAUTH_SECRET,
-      });
+      const session = await getSession(req, res);
       if (!session || !session.user || !session.user.email) {
         return res.status(401).json({ message: 'Unauthorized: Please log in' });
       }

@@ -13,17 +13,26 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
+      console.log('Fetching group data...');
       const groupData = await getGroupData();
+      console.log('Retrieved group data:', groupData);
+      
       const group = new Group(groupData.id, groupData.treeDepth, groupData.members.map(BigInt));
-      res.status(200).json({
+      console.log('Created Group instance with root:', group.root.toString());
+      
+      const response = {
         success: true,
         id: groupData.id,
         treeDepth: groupData.treeDepth,
         members: groupData.members,
         memberCount: groupData.members.length,
         root: group.root.toString(),
-      });
+      };
+      
+      console.log('Sending response:', response);
+      res.status(200).json(response);
     } catch (error) {
+      console.error('Error in group/full:', error);
       res.status(500).json({ success: false, message: 'Error fetching group data', error: error.message });
     }
   } else {

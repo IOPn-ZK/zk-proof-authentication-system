@@ -1,41 +1,48 @@
 import { Group } from '@semaphore-protocol/group';
-import { getGroupData } from '../../../../lib/semaphore/group';
+import { getGroupData } from '../../../../lib/semaphore/group.js';
+import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method === 'GET') {
-    try {
-      console.log('Fetching group data...');
-      const groupData = await getGroupData();
-      console.log('Retrieved group data:', groupData);
-      
-      const group = new Group(groupData.id, groupData.treeDepth, groupData.members.map(BigInt));
-      console.log('Created Group instance with root:', group.root.toString());
-      
-      const response = {
-        success: true,
-        id: groupData.id,
-        treeDepth: groupData.treeDepth,
-        members: groupData.members,
-        memberCount: groupData.members.length,
-        root: group.root.toString(),
-      };
-      
-      console.log('Sending response:', response);
-      res.status(200).json(response);
-    } catch (error) {
-      console.error('Error in group/full:', error);
-      res.status(500).json({ success: false, message: 'Error fetching group data', error: error.message });
-    }
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
+async function handler(req, res) {
+  try {
+    console.log('Fetching encrypted group data...');
+    
+    // Session already validated by security middleware
+    const userEmail = req.session.user.email;
+    console.log('Group data requested by:', userEmail);
+    
+    // Get group data from encrypted storage
+    const groupData = await getGroupData();
+    console.log('Retrieved group data with member count:', groupData.members.length);
+    
+    // Create Group instance for root calculation
+    const group = new Group(groupData.id, groupData.treeDepth, groupData.members.map(BigInt));
+    console.log('Created Group instance with root:', group.root.toString());
+    
+    const response = {
+      success: true,
+      id: groupData.id,
+      treeDepth: groupData.treeDepth,
+      members: groupData.members,
+      memberCount: groupData.members.length,
+      root: group.root.toString(),
+      timestamp: new Date().toISOString(),
+      requestedBy: userEmail
+    };
+    
+    console.log('Sending secure group response');
+    res.status(200).json(response);
+    
+  } catch (error) {
+    console.error('Error in secure group/full:', error);
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching group data', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      timestamp: new Date().toISOString()
+    });
   }
 }
+
+// Apply security middleware with group data configuration
+export default withSecurityConfig('groupData')(handler);

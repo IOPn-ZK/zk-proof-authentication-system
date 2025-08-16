@@ -1,236 +1,182 @@
-# Semaphore OAuth Demo
+# Semaphore + OAuth Demo
 
-A Next.js application demonstrating Semaphore zero-knowledge proofs with Auth0 authentication.
+A Next.js application demonstrating zero-knowledge proof authentication using Semaphore protocol and Auth0 OAuth.
 
-## Tech Stack
+## Features
 
-- **Frontend**: Next.js 14.2.31, React, Tailwind CSS 4
-- **Authentication**: Auth0 NextJS SDK
-- **Zero-Knowledge Proofs**: Semaphore Protocol v3.15.2
-- **Backend**: Next.js API Routes
-- **Storage**: Local JSON files for group data
+- **OAuth Authentication**: Secure login with Google via Auth0
+- **Zero-Knowledge Proofs**: Generate and verify Semaphore proofs
+- **Group Management**: Add/remove members from Semaphore groups
+- **Deterministic Identities**: HKDF-based identity generation for consistent user experience
 
-## Project Structure
+## Prerequisites
 
-```
-semaphore-oauth-demo/
-├── data/
-│   └── group.json                 # Group data storage
-├── lib/
-│   ├── groupData.js              # Group data utilities
-│   └── semaphore/
-│       ├── group.js              # Group management
-│       └── identity.js           # Identity utilities
-├── pages/
-│   ├── api/
-│   │   ├── auth/
-│   │   │   └── [...auth0].js  # Auth0 configuration
-│   │   └── zk/
-│   │       ├── group/
-│   │       │   ├── full.js       # GET group details
-│   │       │   ├── members.js    # POST add member
-│   │       │   └── reset.js      # POST reset group
-│   │       ├── identity/
-│   │       │   └── init.js       # POST initialize identity
-│   │       ├── proof.js          # POST generate proof
-│   │       └── verify.js         # POST verify proof
-│   └── index.js                  # Main frontend page
-├── public/
-│   └── semaphore/
-│       └── 20/
-│           ├── semaphore.wasm    # SNARK circuit file
-│           └── semaphore.zkey    # SNARK proving key
-└── package.json
-```
+- Node.js 18+ 
+- npm or yarn
+- Auth0 account and application
 
-## API Endpoints
+## Setup Instructions
 
-### Authentication
-- **`GET /api/auth/login`** - Initiate Auth0 login
-- **`GET /api/auth/logout`** - Sign out
-- **`GET /api/auth/callback`** - Auth0 callback handler
-- **`GET /api/auth/me`** - Get current user session
+### 1. Clone and Install Dependencies
 
-### Group Management
-- **`GET /api/zk/group/full`** - Get complete group data
-  - Returns: `{ id, treeDepth, members, root, memberCount, success }`
-- **`POST /api/zk/group/members`** - Add member to group
-  - Body: `{ commitment: string }`
-  - Returns: `{ message, success }`
-- **`POST /api/zk/group/reset`** - Reset group (remove all members)
-  - Returns: `{ message, success }`
-
-### Identity Management
-- **`POST /api/zk/identity/init`** - Initialize new identity
-  - Returns: `{ commitment, success }`
-
-### Zero-Knowledge Proofs
-- **`POST /api/zk/proof`** - Generate Semaphore proof
-  - Body: `{ signal: string }`
-  - Returns: `{ fullProof }` (contains `proof` and `publicSignals`)
-- **`POST /api/zk/verify`** - Verify Semaphore proof
-  - Body: `{ fullProof }`
-  - Returns: `{ valid: boolean }`
-
-## API Flow Order
-
-1. **Authentication**: User signs in with Auth0
-2. **Initialize Server Identity**: Create server-side identity using user's email
-3. **Join Group**: Add identity commitment to the Semaphore group
-4. **Show Group Details**: Fetch and display group information
-5. **Generate & Verify Proof**: Create and verify zero-knowledge proof
-6. **Complete**: Flow completed successfully
-
-## Testing Instructions
-
-### 1. Setup Environment Variables
-Create a `.env.local` file:
-```env
-AUTH0_SECRET=your_auth0_secret
-AUTH0_BASE_URL=http://localhost:3000
-AUTH0_ISSUER_BASE_URL=https://your-domain.auth0.com
-AUTH0_CLIENT_ID=your_auth0_client_id
-AUTH0_CLIENT_SECRET=your_auth0_client_secret
-```
-
-### 2. Install Dependencies
 ```bash
+git clone <repository-url>
+cd semaphore-oauth-demo
 npm install
 ```
 
-### 3. Start Development Server
+### 2. Environment Configuration
+
+Create a `.env.local` file in the root directory with the following variables:
+
 ```bash
+# Auth0 Configuration (REQUIRED)
+AUTH0_SECRET=your-very-long-random-secret-key-here-minimum-32-characters
+AUTH0_BASE_URL=http://localhost:3000
+AUTH0_ISSUER_BASE_URL=https://your-domain.auth0.com
+AUTH0_CLIENT_ID=your-auth0-client-id
+AUTH0_CLIENT_SECRET=your-auth0-client-secret
+
+# Encryption (OPTIONAL - will generate one if not provided)
+ENCRYPTION_KEY=your-32-character-encryption-key-here
+
+# Development
+NODE_ENV=development
+```
+
+### 3. Auth0 Application Setup
+
+1. Go to [Auth0 Dashboard](https://manage.auth0.com/)
+2. Create a new application (Regular Web Application)
+3. Configure the following settings:
+   - **Allowed Callback URLs**: `http://localhost:3000/api/auth/callback`
+   - **Allowed Logout URLs**: `http://localhost:3000`
+   - **Allowed Web Origins**: `http://localhost:3000`
+4. Enable Google as a social connection
+5. Copy the Client ID and Client Secret to your `.env.local`
+
+### 4. Generate Required Secrets
+
+#### AUTH0_SECRET
+Generate a long, random secret:
+```bash
+# Option 1: Using openssl
+openssl rand -hex 32
+
+# Option 2: Using node
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+#### ENCRYPTION_KEY (Optional)
+Generate a 32-character encryption key:
+```bash
+# Option 1: Using openssl
+openssl rand -hex 16
+
+# Option 2: Using node
+node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+```
+
+### 5. Run the Application
+
+```bash
+# Development mode
 npm run dev
+
+# Production build
+npm run build
+npm start
 ```
 
-### 4. Test Frontend Flow
-1. Open `http://localhost:3000`
-2. Click "Login with Auth0"
-3. After authentication, you'll see a step-by-step interface:
-   - **Step 1**: Initialize Server Identity - Create a server-side identity
-   - **Step 2**: Join Group - Add identity commitment to the group
-   - **Step 3**: Show Group Details - Fetch and display group information
-   - **Step 4**: Generate & Verify Proof - Create and verify ZK proof
-   - **Step 5**: Complete - Flow completed successfully
-4. Each step must be completed in order to proceed to the next
-5. Use "Reset Flow" to start over or "Reset Group" to clear all members
-
-### 5. Test API Endpoints with Postman
-
-#### Test Group Info
-```http
-GET http://localhost:3000/api/zk/group/info
-```
-
-#### Test Group Full Details
-```http
-GET http://localhost:3000/api/zk/group/full
-```
-
-#### Test Add Member
-```http
-POST http://localhost:3000/api/zk/group/members
-Content-Type: application/json
-
-{
-  "commitment": "1234567890123456789012345678901234567890123456789012345678901234"
-}
-```
-
-#### Test Reset Group
-```http
-POST http://localhost:3000/api/zk/group/reset
-```
-
-#### Test Initialize Server Identity
-```http
-POST http://localhost:3000/api/zk/identity/init
-```
-
-#### Test Generate Proof
-```http
-POST http://localhost:3000/api/zk/proof
-Content-Type: application/json
-
-{
-  "signal": "my-test-signal"
-}
-```
-
-#### Test Verify Proof
-```http
-POST http://localhost:3000/api/zk/verify
-Content-Type: application/json
-
-{
-  "fullProof": {
-    "proof": [...],
-    "publicSignals": [...]
-  }
-}
-```
-
-## Key Features
-
-### Frontend Integration
-- **Auth0 Authentication**: Seamless authentication flow with Auth0
-- **Identity Management**: Automatic identity creation and storage
-- **Group Management**: Manual group joining (no auto-join)
-- **Proof Generation**: Client-side proof generation with Semaphore
-- **Real-time Logs**: Detailed logging of all operations
-
-### Backend Features
-- **Session Management**: Auth0 NextJS SDK session handling
-- **Group Persistence**: JSON file-based group storage
-- **Proof Generation**: Server-side proof generation with SNARK artifacts
-- **Proof Verification**: Off-chain proof verification
-- **Error Handling**: Comprehensive error handling and logging
-
-### Security Features
-- **Authentication Required**: All ZK operations require valid session
-- **Identity Validation**: Ensures user identity is in group before proof generation
-- **Session Validation**: Server-side session verification
-- **Input Validation**: Comprehensive input validation for all endpoints
+The application will be available at `http://localhost:3000`
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"ENOENT: no such file or directory"**
-   - Ensure `public/semaphore/20/semaphore.wasm` and `semaphore.zkey` exist
-   - Check file permissions
+#### 1. "AUTH0_SECRET not configured" Error
+- Ensure `AUTH0_SECRET` is set in `.env.local`
+- The secret must be at least 32 characters long
+- Restart the development server after adding environment variables
 
-2. **"Cannot convert undefined to a BigInt"**
-   - Group data may contain invalid members
-   - Try resetting the group: `POST /api/zk/group/reset`
+#### 2. "No valid session found" Error
+- Check that Auth0 configuration is correct
+- Verify callback URLs are properly configured
+- Ensure the user is properly authenticated
 
-3. **"Invalid fullProof structure"**
-   - Ensure you're using the raw output from `/api/zk/proof`
-   - Check that `fullProof` contains both `proof` and `publicSignals`
+#### 3. File System Errors
+- The application creates a `data/` directory automatically
+- Ensure the application has write permissions to the project directory
+- Check that `data/group.json` exists and is readable
 
-4. **"Parameter 'merkleTreeDepth' is not a number"**
-   - Ensure you're using Semaphore v3.15.2
-   - Check that `Group` instance is properly initialized
+#### 4. Environment Variable Issues
+- Use the `/api/test-env` endpoint to verify all required variables are set
+- Ensure `.env.local` is in the root directory (not in subdirectories)
+- Restart the development server after environment changes
 
-### Debug Steps
+### Debug Endpoints
 
-1. **Check Logs**: View the detailed logs in the frontend
-2. **Verify Files**: Ensure SNARK artifacts exist in `public/semaphore/20/`
-3. **Test Endpoints**: Use Postman to test individual endpoints
-4. **Clear Storage**: Clear localStorage and try again
-5. **Reset Group**: Use the "Reset Group" button to start fresh
+- `/api/test-env` - Check environment variable configuration
+- `/api/debug-auth` - Debug authentication status
+- `/api/security/status` - Check security middleware status
 
-## Dependencies
+## Project Structure
 
-```json
-{
-  "@auth0/nextjs-auth0": "^3.8.0",
-  "@semaphore-protocol/group": "^3.15.2",
-  "@semaphore-protocol/identity": "^3.15.2",
-  "@semaphore-protocol/proof": "^3.15.2",
-  "@zk-kit/utils": "^1.4.1",
-  "next": "^14.2.31",
-  "react": "^18.3.1",
-  "react-dom": "^18.3.1"
-}
 ```
+semaphore-oauth-demo/
+├── pages/
+│   ├── api/           # API endpoints
+│   │   ├── auth/      # Auth0 authentication
+│   │   ├── zk/        # Zero-knowledge proof endpoints
+│   │   └── security/  # Security and status endpoints
+│   └── index.js       # Main application page
+├── lib/
+│   ├── semaphore/     # Semaphore protocol utilities
+│   └── security/      # Security middleware and utilities
+├── data/              # Application data storage
+└── public/            # Static assets
+```
+
+## Security Features
+
+- **Session Management**: Secure session handling with Auth0
+- **Input Validation**: Comprehensive request validation and sanitization
+- **Rate Limiting**: Built-in rate limiting for API endpoints
+- **CORS Protection**: Proper CORS configuration for security
+- **Error Handling**: Secure error handling without information leakage
+
+## Development
+
+### Adding New Endpoints
+
+1. Create a new file in `pages/api/`
+2. Use the security middleware: `withSecurityConfig('endpointType')`
+3. Follow the established error handling patterns
+
+### Testing
+
+```bash
+# Run the development server
+npm run dev
+
+# Test environment configuration
+curl http://localhost:3000/api/test-env
+
+# Test authentication flow
+# 1. Visit http://localhost:3000
+# 2. Click "Login with Google"
+# 3. Complete OAuth flow
+# 4. Test Semaphore operations
+```
+
+## Production Deployment
+
+1. Set `NODE_ENV=production`
+2. Use strong, unique secrets for all environment variables
+3. Configure proper CORS origins for production domains
+4. Set up proper logging and monitoring
+5. Use HTTPS in production
+
+## License
+
+This project is licensed under the MIT License.

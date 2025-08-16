@@ -1,31 +1,47 @@
 import { verifyProof } from '@semaphore-protocol/proof';
+import { withSecurityConfig } from '../../../lib/security/middleware.js';
 
-export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    try {
-      const { fullProof } = req.body;
-      if (!fullProof) {
-        return res.status(400).json({ valid: false, error: 'Missing fullProof' });
-      }
-      // Debug: log the structure
-      console.log('Received fullProof:', fullProof);
-
-      // Check for required fields
-      if (
-        !fullProof.proof 
-      ) {
-        return res.status(400).json({ valid: false, error: 'Invalid fullProof structure' });
-      }
-
-      // Pass the correct tree depth (e.g., 20)
-      const treeDepth = 20; 
-      const isValid = await verifyProof(fullProof, treeDepth);
-      res.status(200).json({ valid: isValid });
-    } catch (error) {
-      console.error('Verification error:', error);
-      res.status(500).json({ valid: false, error: error.message });
-    }
-  } else {
-    res.status(405).json({ message: 'Method not allowed' });
+async function handler(req, res) {
+  try {
+    // Request body already validated by security middleware
+    const { fullProof } = req.body;
+    
+    console.log('ZK Proof verification request received');
+    console.log('Proof structure validation passed');
+    
+    // Verify the zero-knowledge proof
+    const treeDepth = 20;
+    const startTime = Date.now();
+    const isValid = await verifyProof(fullProof, treeDepth);
+    const verificationTime = Date.now() - startTime;
+    
+    console.log(`Proof verification completed in ${verificationTime}ms: ${isValid ? 'VALID' : 'INVALID'}`);
+    
+    // Log verification attempt (without sensitive proof data)
+    console.log('Verification result:', {
+      valid: isValid,
+      verificationTime,
+      timestamp: new Date().toISOString(),
+      treeDepth
+    });
+    
+    res.status(200).json({ 
+      valid: isValid,
+      verificationTime,
+      timestamp: new Date().toISOString(),
+      message: isValid ? 'Proof verified successfully' : 'Proof verification failed'
+    });
+    
+  } catch (error) {
+    console.error('ZK Proof verification error:', error);
+    
+    res.status(500).json({ 
+      valid: false, 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Verification failed',
+      timestamp: new Date().toISOString()
+    });
   }
 }
+
+// Apply security middleware with ZK proof configuration (no auth required for verification)
+export default withSecurityConfig('zkProof')(handler);

@@ -17,10 +17,14 @@
     "@zk-kit/utils": "^1.4.1",
     "next": "^14.2.31",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "validator": "^13.15.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

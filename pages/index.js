@@ -179,31 +179,56 @@ function Home() {
       const members = groupData.members.map(BigInt);
       const fetchedGroup = new Group(groupId, treeDepth, members);
 
-      // Create identity from server identity data
-      addLog('Creating identity from server data for proof generation');
+      // Retrieve deterministic identity for proof generation
+      addLog('Retrieving deterministic identity for proof generation');
       
-      // Create identity using the same seed as the server
-      const userEmail = user?.email;
-      const identity = new Identity(userEmail);
+      const identityResponse = await fetch('/api/zk/identity/retrieve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
       
-      addLog(`Identity created with commitment: ${identity.commitment.toString()}`);
-      addLog(`Server identity commitment: ${serverIdentity}`);
+      if (!identityResponse.ok) {
+        const errorData = await identityResponse.json();
+        throw new Error(errorData.message || 'Failed to retrieve identity');
+      }
       
-      // Verify the identity matches the server commitment
-      if (identity.commitment.toString() !== serverIdentity) {
+      const identityData = await identityResponse.json();
+      
+      // Verify the retrieved identity matches the server commitment
+      if (identityData.commitment !== serverIdentity) {
         setVerificationResult('Error: Identity mismatch. Please reset and try again.');
         addLog('Error: Identity mismatch between server and client.');
         addLog(`Expected: ${serverIdentity}`);
-        addLog(`Got: ${identity.commitment.toString()}`);
+        addLog(`Got: ${identityData.commitment}`);
         return;
       }
-
-      // Generate ZK proof
-      const signal = BigInt(1);
-      const externalNullifier = BigInt(Math.floor(Math.random() * 1000000));
-      addLog(`Generating proof with: Signal=${signal.toString()}, ExternalNullifier=${externalNullifier.toString()}`);
       
-      const fullProof = await generateProof(identity, fetchedGroup, signal, externalNullifier);
+      // Identity validation successful - proceed with server-side proof generation
+      addLog('Identity validation successful - proceeding with server-side proof generation');
+
+      // Generate ZK proof using server-side endpoint
+      const signal = 1;
+      const externalNullifier = Math.floor(Math.random() * 1000000);
+      addLog(`Requesting proof generation with: Signal=${signal}, ExternalNullifier=${externalNullifier}`);
+      
+      const proofResponse = await fetch('/api/zk/proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          signal, 
+          externalNullifier,
+          groupId: groupData.id,
+          treeDepth: treeDepth
+        }),
+      });
+      
+      if (!proofResponse.ok) {
+        const errorData = await proofResponse.json();
+        throw new Error(errorData.message || 'Failed to generate proof');
+      }
+      
+      const proofData = await proofResponse.json();
+      const fullProof = proofData.proof;
 
       // Send proof to server for verification
       const verifyResponse = await fetch('/api/zk/verify', {

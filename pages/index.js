@@ -17,7 +17,6 @@ function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
 
-  // Helper function to add logs
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, `${new Date().toLocaleTimeString()}: ${message}`]);
   };

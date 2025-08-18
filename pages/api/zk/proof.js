@@ -1,4 +1,4 @@
-import { generateProof } from '@semaphore-protocol/proof';
+import { generateProofWithSetup } from '../../../lib/semaphore/proof.js';
 import { Group } from '@semaphore-protocol/group';
 import { retrieveIdentity } from '../../../lib/semaphore/identity.js';
 import { getGroupData } from '../../../lib/semaphore/group.js';
@@ -88,7 +88,7 @@ async function handler(req, res) {
 
     // Generate ZK proof
     console.log('Generating ZK proof...');
-    const fullProof = await generateProof(
+    const fullProof = await generateProofWithSetup(
       identity, 
       group, 
       BigInt(signal), 

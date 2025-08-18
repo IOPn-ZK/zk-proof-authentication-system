@@ -1,20 +1,16 @@
 import { handleAuth } from '@auth0/nextjs-auth0';
 
-// Determine the correct base URL
 function getBaseURL() {
-  // Check for ngrok URL first (for external access)
   if (process.env.NGROK_BASE_URL) {
     console.log('Using NGROK_BASE_URL:', process.env.NGROK_BASE_URL);
     return process.env.NGROK_BASE_URL;
   }
   
-  // Fall back to AUTH0_BASE_URL
   if (process.env.AUTH0_BASE_URL) {
     console.log('Using AUTH0_BASE_URL:', process.env.AUTH0_BASE_URL);
     return process.env.AUTH0_BASE_URL;
   }
   
-  // Default fallback
   const defaultURL = 'http://localhost:3000';
   console.log('Using default URL:', defaultURL);
   return defaultURL;
@@ -83,7 +79,6 @@ export default handleAuth({
     }
     console.error('Auth error from IP:', clientIP);
     
-    // Let Auth0 handle the error response - don't try to manually redirect
     throw err;
   },
   
@@ -137,7 +132,7 @@ export default handleAuth({
   }
 });
 
-// Add validation middleware
+// validation middleware
 export async function getServerSideProps(context) {
   try {
     validateConfig();

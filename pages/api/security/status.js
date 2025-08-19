@@ -76,5 +76,5 @@ async function handler(req, res) {
   }
 }
 
-// Apply security middleware (requires authentication)
-export default withSecurityConfig('groupData')(handler);
+// Apply security middleware (requires authentication; relaxed rate limit)
+export default withSecurityConfig('securityStatus')(handler);

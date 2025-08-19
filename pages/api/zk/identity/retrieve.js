@@ -20,6 +20,7 @@ async function handler(req, res) {
     }
 
     const auth0Sub = req.session.user.sub;
+    const userEmail = req.session.user.email;
     if (!auth0Sub) {
       return res.status(400).json({
         success: false,
@@ -38,7 +39,7 @@ async function handler(req, res) {
       });
     }
 
-    const identityResult = retrieveIdentity(auth0Sub, appSecret);
+    const identityResult = retrieveIdentity(auth0Sub, appSecret, userEmail);
     
     // Return only the necessary data for proof generation
     res.status(200).json({

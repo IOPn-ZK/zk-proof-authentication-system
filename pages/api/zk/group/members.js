@@ -46,5 +46,4 @@ async function handler(req, res) {
   }
 }
 
-// Apply security middleware with group member configuration
 export default withSecurityConfig('groupMember')(handler);

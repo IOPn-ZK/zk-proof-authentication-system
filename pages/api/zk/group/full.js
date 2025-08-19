@@ -44,5 +44,4 @@ async function handler(req, res) {
   }
 }
 
-// Apply security middleware with group data configuration
 export default withSecurityConfig('groupData')(handler);

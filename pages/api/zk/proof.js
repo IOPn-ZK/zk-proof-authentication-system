@@ -34,6 +34,7 @@ async function handler(req, res) {
 
     // Get Auth0 sub from session
     const auth0Sub = req.session.user.sub;
+    const userEmail = req.session.user.email;
     if (!auth0Sub) {
       return res.status(400).json({
         success: false,
@@ -54,7 +55,7 @@ async function handler(req, res) {
 
     console.log('Retrieving deterministic identity for proof generation');
     
-    const identityResult = retrieveIdentity(auth0Sub, appSecret);
+    const identityResult = retrieveIdentity(auth0Sub, appSecret, userEmail);
     const identity = identityResult.identity;
 
     // Get the actual group data from storage

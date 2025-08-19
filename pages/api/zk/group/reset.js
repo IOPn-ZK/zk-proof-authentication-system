@@ -39,5 +39,4 @@ async function handler(req, res) {
   }
 }
 
-// Apply security middleware with group reset configuration (requires auth)
 export default withSecurityConfig('groupReset')(handler);

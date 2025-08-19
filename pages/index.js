@@ -10,7 +10,6 @@ function Home() {
   const { user, error: authError, isLoading } = useUser();
   const [error, setError] = useState(null);
   const [serverIdentity, setServerIdentity] = useState(null);
-  const [serverIdentityData, setServerIdentityData] = useState(null);
   const [groupDetails, setGroupDetails] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -60,9 +59,8 @@ function Home() {
       }
       
       setServerIdentity(data.identityCommitment);
-      setServerIdentityData(data.identityData);
       addLog(`Server identity initialized: ${data.identityCommitment}`);
-      addLog(`Identity data stored for proof generation`);
+      addLog(`Identity commitment stored for proof generation`);
       setCurrentStep(2);
     } catch (error) {
       console.error('Error initializing server identity:', error);
@@ -116,10 +114,7 @@ function Home() {
       addLog('Successfully fetched group details');
       addLog(`Group ID: ${data.id}, Tree Depth: ${data.treeDepth || '20'}, Members: ${data.members?.length || 0}`);
       
-      if (data.members && data.members.length > 0) {
-        addLog(`First few members: ${data.members.slice(0, 3).join(', ')}${data.members.length > 3 ? '...' : ''}`);
-      }
-      
+            
       setCurrentStep(4);
     } catch (error) {
       console.error('Error fetching group details:', error);
@@ -131,7 +126,7 @@ function Home() {
 
   // Step 4: Generate and Verify Proof
   const handleProveMembership = async () => {
-    if (!serverIdentity || !serverIdentityData) {
+    if (!serverIdentity) {
       setVerificationResult('No server identity available. Please complete previous steps.');
       addLog('No server identity available. Please complete previous steps.');
       return;
@@ -258,7 +253,6 @@ function Home() {
   const resetFlow = () => {
     setCurrentStep(1);
     setServerIdentity(null);
-    setServerIdentityData(null);
     setGroupDetails(null);
     setVerificationResult(null);
     setLogs([]);

@@ -1,25 +1,26 @@
-import { completeGroupReset } from '../../../../lib/semaphore/group.js';
+import { resetGroup } from '../../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 async function handler(req, res) {
   try {
     // Session already validated by security middleware
     const userEmail = req.session.user.email;
+    const sessionId = req.session.id;
     
     console.log('Group reset requested by:', userEmail);
-    console.log('Performing complete group reset...');
+    console.log('Performing database group reset...');
     
-    // Perform complete group reset (removes all files and cache)
-    const result = await completeGroupReset();
+    // Perform database group reset (removes all members and resets root)
+    const result = await resetGroup(1, userEmail, sessionId); // Default to group 1
     
     if (result) {
-      console.log('Complete group reset successful');
+      console.log('Database group reset successful');
       res.status(200).json({ 
         success: true,
-        message: 'Group data completely reset successfully',
+        message: 'Group data reset successfully in database',
         resetBy: userEmail,
         timestamp: new Date().toISOString(),
-        details: 'All group files, cache, and encrypted data have been cleared and reset to default state'
+        details: 'All group members have been removed and group root has been reset to default state'
       });
     } else {
       throw new Error('Group reset operation failed');

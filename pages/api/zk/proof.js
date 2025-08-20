@@ -1,7 +1,7 @@
 import { generateProofWithSetup } from '../../../lib/semaphore/proof.js';
 import { Group } from '@semaphore-protocol/group';
 import { retrieveIdentity } from '../../../lib/semaphore/identity.js';
-import { getGroupData } from '../../../lib/semaphore/group.js';
+import { getFullGroupData } from '../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../lib/security/middleware.js';
 
 async function handler(req, res) {
@@ -58,9 +58,9 @@ async function handler(req, res) {
     const identityResult = retrieveIdentity(auth0Sub, appSecret, userEmail);
     const identity = identityResult.identity;
 
-    // Get the actual group data from storage
-    console.log('Fetching group data from storage...');
-    const groupData = await getGroupData();
+    // Get the actual group data from database
+    console.log('Fetching group data from database...');
+    const groupData = await getFullGroupData(groupId);
     
     console.log('Retrieved group data:', {
       id: groupData.id,
@@ -72,7 +72,7 @@ async function handler(req, res) {
     if (!groupData.members.includes(identity.commitment.toString())) {
       return res.status(400).json({
         success: false,
-        message: 'Identity not found in group',
+        message: 'Your identity is not in the group. Please complete step 2.',
         error: 'IDENTITY_NOT_IN_GROUP'
       });
     }

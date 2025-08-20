@@ -1,17 +1,17 @@
 import { Group } from '@semaphore-protocol/group';
-import { getGroupData } from '../../../../lib/semaphore/group.js';
+import { getFullGroupData } from '../../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 async function handler(req, res) {
   try {
-    console.log('Fetching encrypted group data...');
+    console.log('Fetching group data from database...');
     
     // Session already validated by security middleware
     const userEmail = req.session.user.email;
     console.log('Group data requested by:', userEmail);
     
-    // Get group data from encrypted storage
-    const groupData = await getGroupData();
+    // Get group data from database
+    const groupData = await getFullGroupData(1); // Default to group 1
     console.log('Retrieved group data with member count:', groupData.members.length);
     
     // Create Group instance for root calculation

@@ -20,7 +20,6 @@ function Home() {
     setLogs((prevLogs) => [...prevLogs, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
-  // Check for URL error parameters
   useEffect(() => {
     if (router.query.error) {
       setError(decodeURIComponent(router.query.error));
@@ -28,7 +27,6 @@ function Home() {
     }
   }, [router.query.error]);
 
-  // Handle auth errors
   useEffect(() => {
     if (authError) {
       setError(authError.message);
@@ -36,7 +34,6 @@ function Home() {
     }
   }, [authError]);
 
-  // Log successful authentication
   useEffect(() => {
     if (user) {
       addLog('Sign in with Google handled by Auth0');
@@ -79,21 +76,40 @@ function Home() {
     
     setIsLoadingFlow(true);
     try {
-      const response = await fetch('/api/zk/group/members', {
+      addLog('Sending join group request...');
+      const response = await fetch('/api/zk/group/members-pg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ commitment: serverIdentity }),
       });
-      const data = await response.json();
       
+      addLog(`Response status: ${response.status} ${response.statusText}`);
+      
+      let data;
+      try {
+        data = await response.json();
+        addLog(`Response data: ${JSON.stringify(data)}`);
+      } catch (parseError) {
+        addLog(`Failed to parse response as JSON: ${parseError.message}`);
+        throw new Error('Invalid response format from server');
+      }
+      
+      // Check both HTTP status AND success field
       if (!response.ok) {
+        addLog(`HTTP error: ${response.status} - ${data.message || 'Unknown error'}`);
         throw new Error(data.message || `Server error: ${response.status}`);
+      }
+      
+      if (!data.success) {
+        addLog(`API returned success: false - ${data.message || 'Unknown error'}`);
+        throw new Error(data.message || 'Operation failed');
       }
       
       addLog(`Successfully joined group: ${data.message}`);
       setCurrentStep(3);
     } catch (error) {
       addLog(`Error joining group: ${error.message}`);
+      console.error('Join group error details:', error);
     } finally {
       setIsLoadingFlow(false);
     }
@@ -103,7 +119,7 @@ function Home() {
   const fetchGroupDetails = async () => {
     setIsLoadingFlow(true);
     try {
-      const response = await fetch('/api/zk/group/full');
+      const response = await fetch('/api/zk/group/full-pg');
       const data = await response.json();
       
       if (!response.ok) {
@@ -134,11 +150,10 @@ function Home() {
 
     setIsLoadingFlow(true);
     try {
-      // Use existing group details if available, otherwise fetch
       let groupData = groupDetails;
       if (!groupData) {
         addLog('No group details available, fetching...');
-        const response = await fetch('/api/zk/group/full');
+        const response = await fetch('/api/zk/group/full-pg');
         groupData = await response.json();
         
         if (!response.ok || !groupData.success) {
@@ -150,14 +165,12 @@ function Home() {
 
       addLog(`Group data: ID=${groupData.id}, TreeDepth=${groupData.treeDepth || '20'}, Members=${groupData.members?.length || 0}`);
 
-      // Validate group data
       if (!groupData.id || !Array.isArray(groupData.members)) {
         setVerificationResult(`Error: Invalid group data received`);
         addLog(`Error: Invalid group data received`);
         return;
       }
 
-      // Check if the server identity is in the group
       addLog(`Server commitment: ${serverIdentity}`);
       addLog(`Group has ${groupData.members.length} members`);
 
@@ -167,13 +180,11 @@ function Home() {
         return;
       }
 
-      // Initialize group for proof generation
       const treeDepth = groupData.treeDepth || 20;
       const groupId = groupData.id;
       const members = groupData.members.map(BigInt);
       const fetchedGroup = new Group(groupId, treeDepth, members);
 
-      // Retrieve deterministic identity for proof generation
       addLog('Retrieving deterministic identity for proof generation');
       
       const identityResponse = await fetch('/api/zk/identity/retrieve', {
@@ -188,7 +199,6 @@ function Home() {
       
       const identityData = await identityResponse.json();
       
-      // Verify the retrieved identity matches the server commitment
       if (identityData.commitment !== serverIdentity) {
         setVerificationResult('Error: Identity mismatch. Please reset and try again.');
         addLog('Error: Identity mismatch between server and client.');
@@ -197,10 +207,8 @@ function Home() {
         return;
       }
       
-      // Identity validation successful - proceed with server-side proof generation
       addLog('Identity validation successful - proceeding with server-side proof generation');
 
-      // Generate ZK proof using server-side endpoint
       const signal = 1;
       const externalNullifier = Math.floor(Math.random() * 1000000);
       addLog(`Requesting proof generation with: Signal=${signal}, ExternalNullifier=${externalNullifier}`);
@@ -224,7 +232,6 @@ function Home() {
       const proofData = await proofResponse.json();
       const fullProof = proofData.proof;
 
-      // Send proof to server for verification
       const verifyResponse = await fetch('/api/zk/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -263,7 +270,7 @@ function Home() {
   const resetGroup = async () => {
     setIsLoadingFlow(true);
     try {
-      const response = await fetch('/api/zk/group/reset', {
+      const response = await fetch('/api/zk/group/reset-pg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -534,7 +541,6 @@ function Home() {
           
           <button
             onClick={() => {
-              // Force navigation to Auth0 login
               window.location.href = '/api/auth/login';
             }}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

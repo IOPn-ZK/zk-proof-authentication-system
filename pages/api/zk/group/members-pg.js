@@ -3,18 +3,15 @@ import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 async function handler(req, res) {
   try {
-    console.log('POST /api/zk/group/members - Starting secure request processing');
+    console.log('POST /api/zk/group/members-pg - Starting PostgreSQL-based request processing');
     
-    // Session and validation already handled by security middleware
     const userEmail = req.session.user.email;
-    const sessionId = req.session.id;
-    const { commitment } = req.body; // Already validated and sanitized
+    const { commitment } = req.body; 
     
     console.log('User authenticated:', userEmail);
     console.log('Adding member with commitment:', commitment);
     
-    // Add member to group in database
-    const result = await addMemberToGroup(1, commitment, userEmail, sessionId); // Default to group 1
+    const result = await addMemberToGroup(1, commitment, userEmail, req.session.id);
     console.log('addMemberToGroup result:', result);
     
     if (result) {
@@ -36,7 +33,7 @@ async function handler(req, res) {
     }
     
   } catch (error) {
-    console.error('Error in /api/zk/group/members:', error);
+    console.error('Error in /api/zk/group/members-pg:', error);
     
     res.status(500).json({ 
       success: false,

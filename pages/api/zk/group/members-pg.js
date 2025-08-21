@@ -1,17 +1,20 @@
 import { addMemberToGroup } from '../../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
+import { getTenantId } from '../../../../lib/security/tenant.js';
 
 async function handler(req, res) {
   try {
     console.log('POST /api/zk/group/members-pg - Starting PostgreSQL-based request processing');
     
     const userEmail = req.session.user.email;
+    const userSub = req.session.user.sub;
+    const tenantId = getTenantId(req);
     const { commitment } = req.body; 
     
     console.log('User authenticated:', userEmail);
     console.log('Adding member with commitment:', commitment);
     
-    const result = await addMemberToGroup(1, commitment, userEmail, req.session.id);
+    const result = await addMemberToGroup(1, commitment, userEmail, req.session.id, userSub, tenantId);
     console.log('addMemberToGroup result:', result);
     
     if (result) {

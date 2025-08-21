@@ -1,5 +1,6 @@
 import { addMemberToGroup } from '../../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
+import { getTenantId } from '../../../../lib/security/tenant.js';
 
 async function handler(req, res) {
   try {
@@ -7,14 +8,16 @@ async function handler(req, res) {
     
     // Session and validation already handled by security middleware
     const userEmail = req.session.user.email;
+    const userSub = req.session.user.sub;
     const sessionId = req.session.id;
+    const tenantId = getTenantId(req);
     const { commitment } = req.body; // Already validated and sanitized
     
     console.log('User authenticated:', userEmail);
     console.log('Adding member with commitment:', commitment);
     
     // Add member to group in database
-    const result = await addMemberToGroup(1, commitment, userEmail, sessionId); // Default to group 1
+    const result = await addMemberToGroup(1, commitment, userEmail, sessionId, userSub, tenantId); // Default to group 1
     console.log('addMemberToGroup result:', result);
     
     if (result) {

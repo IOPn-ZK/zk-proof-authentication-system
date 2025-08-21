@@ -8,6 +8,20 @@
       "when": 1755666295978,
       "tag": "0000_panoramic_lila_cheney",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1755769000000,
+      "tag": "0001_remove_user_email_from_user_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1755769001000,
+      "tag": "0002_rbac_tenancy_audit_email_encrypt",
+      "breakpoints": true
     }
   ]
 }

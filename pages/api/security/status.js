@@ -1,12 +1,16 @@
 import { withSecurityConfig } from '../../../lib/security/middleware.js';
 import { getSessionStats } from '../../../lib/security/session.js';
 import { getRateLimitStatus } from '../../../lib/security/rateLimit.js';
+import { db } from '../../../lib/db/connection.js';
+import { rateLimits } from '../../../lib/db/schema.js';
+import { desc } from 'drizzle-orm';
 
 async function handler(req, res) {
   try {
     // Get security status information
     const sessionStats = getSessionStats();
     const rateLimitStatus = getRateLimitStatus(req, 'default');
+    const recentLimits = await db.select().from(rateLimits).orderBy(desc(rateLimits.updatedAt)).limit(5);
     
     // Security configuration status
     const securityStatus = {
@@ -31,6 +35,7 @@ async function handler(req, res) {
           remaining: rateLimitStatus.remaining,
           exceeded: rateLimitStatus.exceeded
         },
+        recent: recentLimits,
         types: {
           default: '100 requests per 15 minutes',
           auth: '10 requests per 15 minutes',

@@ -1,4 +1,5 @@
 import { retrieveIdentity } from '../../../../lib/semaphore/identity.js';
+import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 async function handler(req, res) {
@@ -40,6 +41,11 @@ async function handler(req, res) {
     }
 
     const identityResult = retrieveIdentity(auth0Sub, appSecret, userEmail);
+    try {
+      await setSessionIdentity(req.session, identityResult.commitment, null);
+    } catch (e) {
+      console.warn('Could not persist identity to session:', e?.message);
+    }
     
     // Return only the necessary data for proof generation
     res.status(200).json({

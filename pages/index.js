@@ -15,6 +15,7 @@ function Home() {
   const [logs, setLogs] = useState([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, `${new Date().toLocaleTimeString()}: ${message}`]);
@@ -38,6 +39,7 @@ function Home() {
     if (user) {
       addLog('Sign in with Google handled by Auth0');
       addLog('Ready to start Semaphore flow');
+      fetch('/api/admin/users/self').then(r => r.json()).then(d => setIsAdmin(!!d.isAdmin)).catch(() => setIsAdmin(false));
     }
   }, [user]);
 
@@ -318,7 +320,20 @@ function Home() {
               <h1 className="text-3xl font-bold text-slate-800">Semaphore + OAuth Demo</h1>
               <p className="text-slate-600 mt-1">Zero-Knowledge Proof Authentication</p>
             </div>
-            <button
+            <div className="flex gap-3 items-center">
+              <button
+                onClick={async () => {
+                  try {
+                    // demo self-promote via /self POST (dev or ALLOW_SELF_PROMOTE=true)
+                    await fetch(`/api/admin/users/self?ts=${Date.now()}`, { method: 'POST', headers: { 'Cache-Control': 'no-store' } });
+                  } catch {}
+                  window.location.href = '/admin';
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-black transition-colors rounded-lg"
+              >
+                Admin
+              </button>
+              <button
               onClick={() => {
                 window.location.href = '/api/auth/logout';
               }}
@@ -326,6 +341,7 @@ function Home() {
             >
               Sign out
             </button>
+            </div>
           </div>
 
           <div className="mb-8">

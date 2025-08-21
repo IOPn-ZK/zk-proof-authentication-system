@@ -1,4 +1,5 @@
 import { generateDeterministicIdentity } from '../../../../lib/semaphore/identity.js';
+import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 async function handler(req, res) {
@@ -59,6 +60,13 @@ async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
     
+    // Persist commitment to the DB session (no secrets stored)
+    try {
+      await setSessionIdentity(req.session, identity.commitment.toString(), null);
+    } catch (e) {
+      console.warn('Could not persist identity to session:', e?.message);
+    }
+
     const responseBody = {
       success: true,
       identityCommitment: identity.commitment.toString(),

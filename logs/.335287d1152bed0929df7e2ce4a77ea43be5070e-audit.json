@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/.335287d1152bed0929df7e2ce4a77ea43be5070e-audit.json",
+    "files": [
+        {
+            "date": 1756642496453,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/combined-2025-08-31.log",
+            "hash": "ed65daaa0c594bbb2c4ea5136e312c96ffe299b46530337f9924c84262691758"
+        },
+        {
+            "date": 1757309083652,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/combined-2025-09-08.log",
+            "hash": "24fe4838d766d53ad9a1e444b811ea05620e1be2b36dd9034193c4e62ff72462"
+        }
+    ],
+    "hashType": "sha256"
+}

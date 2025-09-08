@@ -4,18 +4,20 @@ import { getRateLimitStatus } from '../../../lib/security/rateLimit.js';
 import { db } from '../../../lib/db/connection.js';
 import { rateLimits } from '../../../lib/db/schema.js';
 import { desc } from 'drizzle-orm';
+import logger from '../../../lib/logging/logger.js';
 
 async function handler(req, res) {
   try {
     // Get security status information
-    const sessionStats = getSessionStats();
-    const rateLimitStatus = getRateLimitStatus(req, 'default');
+    const sessionStats = await getSessionStats();
+    const rateLimitStatus = await getRateLimitStatus(req, 'default');
     const recentLimits = await db.select().from(rateLimits).orderBy(desc(rateLimits.updatedAt)).limit(5);
+    const requestedBy = req.session?.user?.email || 'anonymous';
     
     // Security configuration status
     const securityStatus = {
       timestamp: new Date().toISOString(),
-      requestedBy: req.session.user.email,
+      requestedBy,
       
       // Session management
       sessions: {
@@ -52,18 +54,22 @@ async function handler(req, res) {
         inputValidation: true,
         secureHeaders: true,
         corsRestriction: true,
-        cryptographicSeeds: true
+        cryptographicSeeds: true,
+        redisSessions: !!process.env.REDIS_HOST,
+        asyncProofGeneration: true,
+        structuredLogging: true,
       },
       
       // Environment info (non-sensitive)
       environment: {
         nodeEnv: process.env.NODE_ENV,
         hasEncryptionKey: !!process.env.ENCRYPTION_KEY,
+        hasRedisConfig: !!(process.env.REDIS_HOST || process.env.REDIS_URL),
         auth0Configured: !!(process.env.AUTH0_CLIENT_ID && process.env.AUTH0_CLIENT_SECRET)
       }
     };
     
-    console.log('Security status requested by:', req.session.user.email);
+    logger.info('Security status requested', { requestedBy });
     
     res.status(200).json({
       success: true,
@@ -71,7 +77,7 @@ async function handler(req, res) {
     });
     
   } catch (error) {
-    console.error('Error getting security status:', error);
+    logger.error('Error getting security status', { error: error.message, stack: error.stack });
     
     res.status(500).json({
       success: false,

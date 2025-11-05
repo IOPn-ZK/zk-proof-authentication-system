@@ -1,9 +1,35 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // experimental: {
-  //   esmExternals: true,
-  // },
+  webpack: (config, { isServer }) => {
+    // Fix for Node.js built-in modules in browser context
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+        events: false,
+      };
+    }
+    
+    // Ignore lucide-react if it's causing issues (not used in project)
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'lucide-react': false,
+    };
+    
+    return config;
+  },
   async headers() {
     return [
       {

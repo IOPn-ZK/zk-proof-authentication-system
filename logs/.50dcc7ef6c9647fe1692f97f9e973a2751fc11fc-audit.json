@@ -6,14 +6,9 @@
     "auditLog": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/.50dcc7ef6c9647fe1692f97f9e973a2751fc11fc-audit.json",
     "files": [
         {
-            "date": 1756642496454,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/security-2025-08-31.log",
-            "hash": "1b5615c77c77771bb9326d3cf41011f42a89602feb4c076f48bf9650fc8f05f8"
-        },
-        {
-            "date": 1757309083654,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/security-2025-09-08.log",
-            "hash": "1b35e5ef0cbd440261cbbaba8ab8133e4d32d395c4ca26d2ac725cc618db4939"
+            "date": 1762321619926,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/security-2025-11-05.log",
+            "hash": "1804235966664bc92f123aee8e628924ebca5133d84e5dae6f380d6520ab5c28"
         }
     ],
     "hashType": "sha256"

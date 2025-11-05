@@ -248,6 +248,9 @@ function Home() {
       } else {
         setVerificationResult('Proof verification failed');
         addLog(`Proof verification failed: ${verifyData.error || 'Invalid proof'}`);
+        if (verifyData.error === 'REUSED_NULLIFIER') {
+          addLog('⚠️ This proof was already used - replay prevention working!');
+        }
       }
     } catch (error) {
       console.error('Error in handleProveMembership:', error);

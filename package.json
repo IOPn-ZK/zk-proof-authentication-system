@@ -24,6 +24,7 @@
     "dotenv": "^17.2.1",
     "drizzle-kit": "^0.20.18",
     "drizzle-orm": "^0.29.3",
+    "ethers": "^6.15.0",
     "events": "^3.3.0",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",

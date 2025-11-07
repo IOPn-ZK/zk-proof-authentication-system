@@ -9,6 +9,16 @@
             "date": 1762321619925,
             "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-05.log",
             "hash": "b44d54df2caf2628fcf35de19ac5a5070827c79ef9efd6a57379def75b047d8a"
+        },
+        {
+            "date": 1762367666078,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-06.log",
+            "hash": "de77bdf0b7e08ecb214e03d647431645367f3bab87798e75777514d5cd22f1e3"
+        },
+        {
+            "date": 1762530623661,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-07.log",
+            "hash": "17535da5451c13e10f64b55a68888e2941802a3caec040c983b43e1b03de0053"
         }
     ],
     "hashType": "sha256"

@@ -9,11 +9,12 @@ function Home() {
   const router = useRouter();
   const { user, error: authError, isLoading } = useUser();
   const [error, setError] = useState(null);
+  const [walletAddress, setWalletAddress] = useState(null);
   const [serverIdentity, setServerIdentity] = useState(null);
   const [groupDetails, setGroupDetails] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
   const [logs, setLogs] = useState([]);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -35,18 +36,55 @@ function Home() {
     }
   }, [authError]);
 
+  // Step 0: Generate Wallet (Wallet Abstraction)
+  const generateWallet = async () => {
+    setIsLoadingFlow(true);
+    try {
+      addLog('Generating deterministic wallet from Auth0 sub claim...');
+      const response = await fetch('/api/zk/wallet/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to generate wallet');
+      }
+      
+      setWalletAddress(data.walletAddress);
+      addLog(`✅ Wallet generated: ${data.walletAddress}`);
+      addLog(`Identity commitment: ${data.identityCommitment}`);
+      addLog('Wallet abstraction complete - ready for ZK Semaphore');
+      setCurrentStep(1);
+    } catch (error) {
+      console.error('Error generating wallet:', error);
+      addLog(`Error: ${error.message}`);
+    } finally {
+      setIsLoadingFlow(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       addLog('Sign in with Google handled by Auth0');
-      addLog('Ready to start Semaphore flow');
+      addLog('Starting wallet abstraction flow...');
+      // Auto-generate wallet after login
+      generateWallet();
       fetch('/api/admin/users/self').then(r => r.json()).then(d => setIsAdmin(!!d.isAdmin)).catch(() => setIsAdmin(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Step 1: Initialize Server Identity
+  // Step 1: Initialize Server Identity (uses wallet from step 0)
   const initializeServerIdentity = async () => {
+    if (!walletAddress) {
+      addLog('No wallet available. Please generate wallet first.');
+      return;
+    }
+    
     setIsLoadingFlow(true);
     try {
+      addLog('Initializing Semaphore identity from wallet...');
       const response = await fetch('/api/zk/identity/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +96,7 @@ function Home() {
       }
       
       setServerIdentity(data.identityCommitment);
-      addLog(`Server identity initialized: ${data.identityCommitment}`);
+      addLog(`✅ Semaphore identity initialized: ${data.identityCommitment}`);
       addLog(`Identity commitment stored for proof generation`);
       setCurrentStep(2);
     } catch (error) {
@@ -263,12 +301,16 @@ function Home() {
 
   // Reset flow
   const resetFlow = () => {
-    setCurrentStep(1);
+    setCurrentStep(0);
+    setWalletAddress(null);
     setServerIdentity(null);
     setGroupDetails(null);
     setVerificationResult(null);
     setLogs([]);
-    addLog('Flow reset to step 1');
+    addLog('Flow reset - regenerating wallet...');
+    if (user) {
+      generateWallet();
+    }
   };
 
   // Reset group
@@ -296,7 +338,8 @@ function Home() {
   };
 
   const steps = [
-    { id: 1, title: 'Initialize Identity', description: 'Create identity' },
+    { id: 0, title: 'Generate Wallet', description: 'Wallet abstraction from social login' },
+    { id: 1, title: 'Initialize Identity', description: 'Create Semaphore identity' },
     { id: 2, title: 'Join Group', description: 'Add to Semaphore group' },
     { id: 3, title: 'View Details', description: 'Fetch group information' },
     { id: 4, title: 'Generate Proof', description: 'Create ZK proof' },
@@ -384,17 +427,45 @@ function Home() {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
                 <h2 className="text-xl font-semibold text-slate-800 mb-6">
-                  Step {currentStep}: {steps[currentStep - 1]?.title}
+                  Step {currentStep}: {steps[currentStep]?.title}
                 </h2>
                 
+                {currentStep === 0 && (
+                  <div>
+                    <p className="text-slate-600 mb-6 leading-relaxed">
+                      Generating your deterministic wallet from your Auth0 social login. This wallet is created using HKDF from your unique Auth0 sub claim - no storage required!
+                    </p>
+                    {walletAddress ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                        <h3 className="text-green-800 font-semibold mb-2">✅ Wallet Generated Successfully</h3>
+                        <p className="text-green-700 text-sm mb-2">Your deterministic wallet address:</p>
+                        <p className="text-sm font-mono text-green-800 bg-green-100 p-2 rounded break-all">{walletAddress}</p>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-blue-800 text-center">Generating wallet...</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={generateWallet}
+                      disabled={isLoadingFlow}
+                      className="bg-blue-500 disabled:bg-slate-300 text-white font-semibold py-3 px-6 my-3 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md "
+                    >
+                      {isLoadingFlow ? 'Generating...' : 'Regenerate Wallet'}
+                    </button>
+                  </div>
+                )}
+
                 {currentStep === 1 && (
                   <div>
                     <p className="text-slate-600 mb-6 leading-relaxed">
-                      Initialize a server-side identity using your Google account. This creates a unique cryptographic commitment for your session.
+                      Initialize your Semaphore identity using the wallet generated from your social login. This creates a unique cryptographic commitment for zero-knowledge proofs.
                     </p>
+
                     <button
                       onClick={initializeServerIdentity}
-                      disabled={isLoadingFlow}
+                      disabled={isLoadingFlow || !walletAddress}
                       className="bg-blue-500 hover:bg-blue-600 disabled:bg-slate-300 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       {isLoadingFlow ? 'Initializing...' : 'Initialize Identity'}
@@ -461,6 +532,19 @@ function Home() {
             </div>
 
             <div className="space-y-6">
+              {walletAddress && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Wallet Address</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Address</p>
+                      <p className="text-sm font-mono text-slate-800 bg-slate-50 p-2 rounded break-all">{walletAddress}</p>
+                    </div>
+                  
+                  </div>
+                </div>
+              )}
+
               {groupDetails && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">Group Details</h3>

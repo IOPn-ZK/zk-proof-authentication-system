@@ -9,6 +9,11 @@
             "date": 1762321619926,
             "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-05.log",
             "hash": "2c04efcf285c6ebb1e16ae43f6da3cee8c33fd3ae08cf301d10f7a9b7161cc03"
+        },
+        {
+            "date": 1762530623665,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-07.log",
+            "hash": "f34db4426fcbb201d43f61ead093354c46135af69c172e74d2340b3591a8747c"
         }
     ],
     "hashType": "sha256"

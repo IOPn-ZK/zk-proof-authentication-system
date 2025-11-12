@@ -17,6 +17,13 @@ function Home() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoadingFlow, setIsLoadingFlow] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [exportedPrivateKey, setExportedPrivateKey] = useState(null);
+  const [exportedSeed, setExportedSeed] = useState(null);
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [showSeed, setShowSeed] = useState(false);
+  const [isExportingPrivateKey, setIsExportingPrivateKey] = useState(false);
+  const [isExportingSeed, setIsExportingSeed] = useState(false);
+  const [hideCountdown, setHideCountdown] = useState(30);
 
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, `${new Date().toLocaleTimeString()}: ${message}`]);
@@ -74,6 +81,42 @@ function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Auto-hide private key and seed after 30 seconds for security
+  useEffect(() => {
+    if (showPrivateKey || showSeed) {
+      // Reset countdown when showing
+      setHideCountdown(30);
+      
+      // Countdown timer
+      const countdownInterval = setInterval(() => {
+        setHideCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Auto-hide timer
+      const hideTimer = setTimeout(() => {
+        setShowPrivateKey(false);
+        setShowSeed(false);
+        setExportedPrivateKey(null);
+        setExportedSeed(null);
+        setHideCountdown(30);
+        addLog('🔒 Private key and seed hidden for security (30s timeout)');
+      }, 30000); // 30 seconds
+
+      return () => {
+        clearTimeout(hideTimer);
+        clearInterval(countdownInterval);
+      };
+    } else {
+      setHideCountdown(30);
+    }
+  }, [showPrivateKey, showSeed]);
 
   // Step 1: Initialize Server Identity (uses wallet from step 0)
   const initializeServerIdentity = async () => {
@@ -299,6 +342,162 @@ function Home() {
     }
   };
 
+  // Decrypt data using Web Crypto API
+  const decryptData = async (encryptedData, sessionKey) => {
+    try {
+      // Convert hex strings to ArrayBuffers
+      const keyBuffer = new Uint8Array(
+        sessionKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      
+      const iv = new Uint8Array(
+        encryptedData.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      
+      const authTag = new Uint8Array(
+        encryptedData.authTag.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+      
+      const encrypted = new Uint8Array(
+        encryptedData.encrypted.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
+
+      // Import the key
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyBuffer,
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+
+      // For AES-GCM in Web Crypto API, combine encrypted data with auth tag
+      // The auth tag must be appended to the encrypted data
+      const encryptedWithTag = new Uint8Array(encrypted.length + authTag.length);
+      encryptedWithTag.set(encrypted);
+      encryptedWithTag.set(authTag, encrypted.length);
+
+      // Decrypt (Web Crypto API expects auth tag appended)
+      const decrypted = await crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: iv,
+          tagLength: 128 // 16 bytes = 128 bits
+        },
+        cryptoKey,
+        encryptedWithTag
+      );
+
+      return new TextDecoder().decode(decrypted);
+    } catch (error) {
+      console.error('Decryption error:', error);
+      throw new Error('Failed to decrypt data. Make sure you have a valid session.');
+    }
+  };
+
+  // Export and decrypt private key
+  const exportPrivateKey = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (!walletAddress) {
+      addLog('No wallet available. Please generate wallet first.');
+      return;
+    }
+
+    if (isExportingPrivateKey || isExportingSeed) {
+      return; // Prevent multiple simultaneous exports
+    }
+
+    setIsExportingPrivateKey(true);
+    try {
+      addLog('Exporting private key...');
+      const response = await fetch('/api/zk/wallet/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to export private key');
+      }
+
+      // Decrypt the private key client-side
+      const decryptedPrivateKey = await decryptData(data.encryptedPrivateKey, data.sessionKey);
+      setExportedPrivateKey(decryptedPrivateKey);
+      setShowPrivateKey(true);
+      // Hide seed if it was showing
+      setShowSeed(false);
+      setExportedSeed(null);
+      addLog('✅ Private key exported and decrypted');
+    } catch (error) {
+      console.error('Error exporting private key:', error);
+      addLog(`Error: ${error.message}`);
+    } finally {
+      setIsExportingPrivateKey(false);
+    }
+  };
+
+  // Export and decrypt seed
+  const exportSeed = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (!walletAddress) {
+      addLog('No wallet available. Please generate wallet first.');
+      return;
+    }
+
+    if (isExportingPrivateKey || isExportingSeed) {
+      return; // Prevent multiple simultaneous exports
+    }
+
+    setIsExportingSeed(true);
+    try {
+      addLog('Exporting seed...');
+      const response = await fetch('/api/zk/wallet/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to export seed');
+      }
+
+      // Decrypt the seed client-side
+      const decryptedSeed = await decryptData(data.encryptedSeed, data.sessionKey);
+      setExportedSeed(decryptedSeed);
+      setShowSeed(true);
+      // Hide private key if it was showing
+      setShowPrivateKey(false);
+      setExportedPrivateKey(null);
+      addLog('✅ Seed exported and decrypted');
+    } catch (error) {
+      console.error('Error exporting seed:', error);
+      addLog(`Error: ${error.message}`);
+    } finally {
+      setIsExportingSeed(false);
+    }
+  };
+
+  // Copy to clipboard
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      addLog(`✅ ${label} copied to clipboard`);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      addLog(`Error copying ${label}`);
+    }
+  };
+
   // Reset flow
   const resetFlow = () => {
     setCurrentStep(0);
@@ -306,6 +505,10 @@ function Home() {
     setServerIdentity(null);
     setGroupDetails(null);
     setVerificationResult(null);
+    setExportedPrivateKey(null);
+    setExportedSeed(null);
+    setShowPrivateKey(false);
+    setShowSeed(false);
     setLogs([]);
     addLog('Flow reset - regenerating wallet...');
     if (user) {
@@ -540,7 +743,93 @@ function Home() {
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Address</p>
                       <p className="text-sm font-mono text-slate-800 bg-slate-50 p-2 rounded break-all">{walletAddress}</p>
                     </div>
-                  
+
+
+                    {/* Export Buttons */}
+                    <div className="pt-3 border-t border-slate-200 space-y-2">
+                      <button
+                        type="button"
+                        onClick={exportPrivateKey}
+                        disabled={isExportingPrivateKey || isExportingSeed}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                      >
+                        {isExportingPrivateKey ? 'Exporting...' : 'Export Private Key'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportSeed}
+                        disabled={isExportingPrivateKey || isExportingSeed}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                      >
+                        {isExportingSeed ? 'Exporting...' : 'View Seed'}
+                      </button>
+                    </div>
+
+                    {/* Security Warning */}
+                    {(showPrivateKey || showSeed) && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+                        <p className="text-sm font-semibold text-red-800 mb-1">Security Warning</p>
+                        <p className="text-xs text-red-700">
+                          Never share your private key or seed with anyone. Anyone with access can control your wallet. Only import into trusted wallets like MetaMask.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Exported Private Key */}
+                    {showPrivateKey && exportedPrivateKey && (
+                      <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-semibold text-amber-800">Private Key</p>
+                            {hideCountdown > 0 && (
+                              <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded">
+                                Hides in {hideCountdown}s
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(exportedPrivateKey, 'Private key')}
+                            className="text-xs bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <p className="text-xs font-mono text-amber-900 bg-amber-100 p-2 rounded break-all">
+                          {exportedPrivateKey}
+                        </p>
+                        <p className="text-xs text-amber-700 mt-2">
+                          Import this into MetaMask: Settings → Security & Privacy → Show Private Key → Import Account
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Exported Seed */}
+                    {showSeed && exportedSeed && (
+                      <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-semibold text-purple-800">Seed (Hex)</p>
+                            {hideCountdown > 0 && (
+                              <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
+                                Hides in {hideCountdown}s
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(exportedSeed, 'Seed')}
+                            className="text-xs bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <p className="text-xs font-mono text-purple-900 bg-purple-100 p-2 rounded break-all">
+                          {exportedSeed}
+                        </p>
+                        <p className="text-xs text-purple-700 mt-2">
+                          This is the 32-byte seed used to generate your wallet. Keep it secure.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

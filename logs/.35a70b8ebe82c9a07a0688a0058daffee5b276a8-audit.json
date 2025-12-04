@@ -29,6 +29,21 @@
             "date": 1762847734071,
             "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-11.log",
             "hash": "5a634a44f02bc445eb1089df2a75c7c8e361c4f1048cc230a1afc6ed4e4b8f1e"
+        },
+        {
+            "date": 1763731518557,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-21.log",
+            "hash": "8ea858c73444ac8706c874aa8141e94e7af3e5ae2bd5195e8fcde37bcc99a726"
+        },
+        {
+            "date": 1764234844510,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-27.log",
+            "hash": "7c7353649e2452708127fb18c8af93db2305c2b17522ad5b06df42cb053db81c"
+        },
+        {
+            "date": 1764313340082,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/audit-2025-11-28.log",
+            "hash": "4421b7cb49efbae64b2355a5dcfed49c423ba4314c48fe1f029d48235474b808"
         }
     ],
     "hashType": "sha256"

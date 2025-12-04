@@ -6,29 +6,19 @@
     "auditLog": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/.3b952cbd9267a06fa7692027e1151e84ef72f7da-audit.json",
     "files": [
         {
-            "date": 1762321619928,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-05.log",
-            "hash": "e9a40ca828ebffa9eb43bc725ebdcad79cb90b89f233ce7cda10f821c99a0e3a"
+            "date": 1763731518558,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-21.log",
+            "hash": "3ecd2255d5b657309b1b058a6d6b6231755914da651d1f944530c00d637bc23c"
         },
         {
-            "date": 1762530623669,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-07.log",
-            "hash": "2b1baed84659328d28946b0706fe5216af20ca7e3b4e84ad4c192201f27ea3e7"
+            "date": 1764234844512,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-27.log",
+            "hash": "9ab4c0bf6c99faa48f7d8e1f2a9366924f8c0e7d36f1c05bc86a5ca2b877f0f8"
         },
         {
-            "date": 1762694474889,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-09.log",
-            "hash": "fe396d24d4f33e4761b504ce22d700e0e9ab2031138dbf108243634d4b8ccd67"
-        },
-        {
-            "date": 1762753414020,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-10.log",
-            "hash": "be505c6fa3a151f3989ae34abd8fd8d85d72b613410832e30605064755f1a645"
-        },
-        {
-            "date": 1762847734072,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-11.log",
-            "hash": "cd78c42fe93e635ebf7e84a311d9901072d884733034c2de6fbde025211b8ebd"
+            "date": 1764313340083,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/proof-2025-11-28.log",
+            "hash": "c796561cbb6cba50093e1f246bfcf2266b29e2856cc0a2c8c0ec5471bc792fa2"
         }
     ],
     "hashType": "sha256"

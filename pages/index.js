@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Identity } from '@semaphore-protocol/identity';
 import { generateProof } from '@semaphore-protocol/proof';
 import { Group } from '@semaphore-protocol/group';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { useRouter } from 'next/router';
+import { useGoogleLogin } from '@react-oauth/google';
 
 function Home() {
   const router = useRouter();
@@ -24,10 +25,14 @@ function Home() {
   const [isExportingPrivateKey, setIsExportingPrivateKey] = useState(false);
   const [isExportingSeed, setIsExportingSeed] = useState(false);
   const [hideCountdown, setHideCountdown] = useState(30);
+  const [pendingCloudShare, setPendingCloudShare] = useState(null);
+  const [cloudBackupPassword, setCloudBackupPassword] = useState('');
+  const [cloudBackupStatus, setCloudBackupStatus] = useState(null);
+  const [isUploadingCloudBackup, setIsUploadingCloudBackup] = useState(false);
 
-  const addLog = (message) => {
+  const addLog = useCallback((message) => {
     setLogs((prevLogs) => [...prevLogs, `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
+  }, []);
 
   useEffect(() => {
     if (router.query.error) {
@@ -141,6 +146,27 @@ function Home() {
       setServerIdentity(data.identityCommitment);
       addLog(`✅ Semaphore identity initialized: ${data.identityCommitment}`);
       addLog(`Identity commitment stored for proof generation`);
+      
+      // Handle key shares if they were just created (client-side only)
+      if (data.sharesCreated && data.shares && typeof window !== 'undefined' && user?.sub) {
+        try {
+          addLog('🔐 Key shares created - storing Share A in device...');
+          // Dynamic import for client-side only
+          const { storeDeviceShare } = await import('../lib/security/deviceStorage.js');
+          await storeDeviceShare(user.sub, data.shares.shareA);
+          addLog('✅ Share A stored securely in device storage');
+          addLog(`📦 Share C ready for cloud backup: ${data.shares.shareC.substring(0, 20)}...`);
+          addLog('⚠️  Note: Share C should be encrypted and uploaded to Google Drive');
+          setPendingCloudShare(data.shares.shareC);
+          setCloudBackupStatus('Share C ready. Add a backup password and upload to Google Drive.');
+        } catch (shareError) {
+          console.error('Error storing Share A:', shareError);
+          addLog(`⚠️  Warning: Could not store Share A: ${shareError.message}`);
+        }
+      } else if (data.sharesCreated === false) {
+        addLog('ℹ️  Key shares already exist for this user');
+      }
+      
       setCurrentStep(2);
     } catch (error) {
       console.error('Error initializing server identity:', error);
@@ -510,10 +536,86 @@ function Home() {
     setShowPrivateKey(false);
     setShowSeed(false);
     setLogs([]);
+    setPendingCloudShare(null);
+    setCloudBackupPassword('');
+    setCloudBackupStatus(null);
     addLog('Flow reset - regenerating wallet...');
     if (user) {
       generateWallet();
     }
+  };
+
+  const handleCloudBackupUpload = useCallback(async (accessToken) => {
+    if (!pendingCloudShare) {
+      setCloudBackupStatus('No Share C available to upload.');
+      return;
+    }
+    if (!cloudBackupPassword || cloudBackupPassword.length < 8) {
+      setCloudBackupStatus('Please enter a backup password with at least 8 characters.');
+      return;
+    }
+    setIsUploadingCloudBackup(true);
+    try {
+      setCloudBackupStatus('Encrypting Share C...');
+      const {
+        encryptShareForCloudBackup,
+        uploadToGoogleDrive,
+        generateBackupFileName
+      } = await import('../lib/security/cloudBackupService.js');
+      const encrypted = await encryptShareForCloudBackup(pendingCloudShare, cloudBackupPassword);
+      setCloudBackupStatus('Uploading encrypted share to Google Drive...');
+      const uploadResult = await uploadToGoogleDrive(
+        encrypted.encryptedData,
+        generateBackupFileName(user?.sub || 'anon-user'),
+        accessToken
+      );
+      setCloudBackupStatus('Storing cloud backup metadata...');
+      const metadataResponse = await fetch('/api/zk/shares/cloud-backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cloudBackupUrl: uploadResult.fileId,
+          shareHash: encrypted.hash
+        })
+      });
+      const metadata = await metadataResponse.json();
+      if (!metadataResponse.ok || !metadata.success) {
+        throw new Error(metadata.message || 'Failed to store cloud backup metadata');
+      }
+      addLog(`✅ Share C uploaded to Google Drive file ${uploadResult.fileName || uploadResult.fileId}`);
+      addLog('📁 Cloud backup metadata stored successfully');
+      setCloudBackupStatus('✅ Share C encrypted, uploaded, and recorded. You can now safely close this session.');
+      setPendingCloudShare(null);
+      setCloudBackupPassword('');
+    } catch (error) {
+      console.error('Cloud backup error:', error);
+      setCloudBackupStatus(`Failed to back up Share C: ${error.message}`);
+      addLog(`Cloud backup error: ${error.message}`);
+    } finally {
+      setIsUploadingCloudBackup(false);
+    }
+  }, [pendingCloudShare, cloudBackupPassword, user?.sub, addLog]);
+
+  const googleDriveLogin = useGoogleLogin({
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    onSuccess: ({ access_token: accessToken }) => handleCloudBackupUpload(accessToken),
+    onError: (errorResponse) => {
+      console.error('Google Drive auth error:', errorResponse);
+      setCloudBackupStatus(`Google authorization failed: ${errorResponse.error || 'Unknown error'}`);
+    }
+  });
+
+  const initiateCloudBackup = () => {
+    if (!pendingCloudShare) {
+      setCloudBackupStatus('No Share C available to upload.');
+      return;
+    }
+    if (!cloudBackupPassword || cloudBackupPassword.length < 8) {
+      setCloudBackupStatus('Please enter a backup password with at least 8 characters.');
+      return;
+    }
+    setCloudBackupStatus('Requesting permission to create a Drive backup...');
+    googleDriveLogin();
   };
 
   // Reset group
@@ -563,7 +665,7 @@ function Home() {
   if (user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-6xl mx-auto p-6">
+        <div className="max-w-8xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">Semaphore + OAuth Demo</h1>
@@ -594,11 +696,11 @@ function Home() {
           </div>
 
           <div className="mb-8">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between px-3">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center flex-1">
                   <div className="flex items-center">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-all duration-300 shrink-0 ${
                       step.id < currentStep 
                         ? 'bg-green-500 text-white shadow-lg' 
                         : step.id === currentStep
@@ -616,11 +718,7 @@ function Home() {
                       <div className="text-xs text-slate-500">{step.description}</div>
                     </div>
                   </div>
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-px mx-6 transition-all duration-300 ${
-                      step.id < currentStep ? 'bg-green-500' : 'bg-slate-200'
-                    }`} />
-                  )}
+                  {/* Connecting line intentionally removed */}
                 </div>
               ))}
             </div>
@@ -855,6 +953,47 @@ function Home() {
                       <p className="text-sm font-mono text-slate-800 bg-slate-50 p-2 rounded truncate">{groupDetails.root}</p>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {(pendingCloudShare || cloudBackupStatus) && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Cloud Backup</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Encrypt Share C with a password/biometric phrase and upload it to your Google Drive.
+                  </p>
+                  {pendingCloudShare ? (
+                    <>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        Backup Password (min 8 chars)
+                      </label>
+                      <input
+                        type="password"
+                        value={cloudBackupPassword}
+                        onChange={(e) => setCloudBackupPassword(e.target.value)}
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Strong password used to encrypt Share C"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={initiateCloudBackup}
+                        disabled={isUploadingCloudBackup}
+                        className="w-full bg-green-500 hover:bg-green-600 disabled:bg-slate-300 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
+                      >
+                        {isUploadingCloudBackup ? 'Uploading...' : 'Encrypt & Upload to Google Drive'}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      No pending Share C. Re-initialize identity to create new shares if needed.
+                    </p>
+                  )}
+                  {cloudBackupStatus && (
+                    <div className="mt-4 text-sm rounded-lg p-3 border bg-slate-50 text-slate-700">
+                      {cloudBackupStatus}
+                    </div>
+                  )}
                 </div>
               )}
 

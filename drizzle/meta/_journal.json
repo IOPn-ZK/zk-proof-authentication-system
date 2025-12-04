@@ -22,6 +22,20 @@
       "when": 1755769001000,
       "tag": "0002_rbac_tenancy_audit_email_encrypt",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1763136212078,
+      "tag": "0003_nosy_changeling",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1769620000000,
+      "tag": "0005_allow_multi_key_shares",
+      "breakpoints": true
     }
   ]
 }

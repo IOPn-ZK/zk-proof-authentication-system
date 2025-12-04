@@ -1,6 +1,8 @@
 import { generateDeterministicIdentity } from '../../../../lib/semaphore/identity.js';
 import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
+import { splitPrivateKey, encryptShareForServer } from '../../../../lib/security/keyShareService.js';
+import { storeServerShare, hasKeyShares } from '../../../../lib/db/keyShareService.js';
 
 async function handler(req, res) {
   try {
@@ -52,11 +54,40 @@ async function handler(req, res) {
     
     const identityResult = generateDeterministicIdentity(auth0Sub, appSecret, userEmail);
     const identity = identityResult.identity;
+    const privateKey = identityResult.privateKey;
     console.log('Deterministic identity created successfully');
+    
+    // Check if shares already exist
+    const sharesExist = await hasKeyShares(auth0Sub);
+    
+    let shareA = null;
+    let shareC = null;
+    
+    if (!sharesExist) {
+      // Split private key into 3 shares (2-of-3 threshold)
+      console.log('Splitting private key into shares...');
+      const shares = splitPrivateKey(privateKey, 3, 2);
+      
+      // Share A (Index 1): Device - will be sent to client for local storage
+      shareA = shares[0];
+      
+      // Share B (Index 2): Server - encrypt and store in database
+      const { encryptedShare, shareHash } = encryptShareForServer(shares[1]);
+      await storeServerShare(auth0Sub, encryptedShare, shareHash);
+      console.log('Server share stored successfully');
+      
+      // Share C (Index 3): Cloud Backup - will be sent to client for encryption and upload
+      shareC = shares[2];
+      
+      console.log('Key shares created and distributed');
+    } else {
+      console.log('Key shares already exist for user, skipping share creation');
+    }
     
     console.log('Secure identity created for user:', {
       email: userEmail,
       commitment: identity.commitment.toString(),
+      sharesCreated: !sharesExist,
       timestamp: new Date().toISOString()
     });
     
@@ -70,8 +101,19 @@ async function handler(req, res) {
     const responseBody = {
       success: true,
       identityCommitment: identity.commitment.toString(),
-      message: 'Deterministic identity created using HKDF (no secrets returned)'
+      message: 'Deterministic identity created using HKDF',
+      sharesCreated: !sharesExist
     };
+    
+    // Only return shares if they were just created (first time setup)
+    if (!sharesExist && shareA && shareC) {
+      responseBody.shares = {
+        shareA: shareA, // Device share - client should store locally
+        shareC: shareC  // Cloud backup share - client should encrypt and upload
+      };
+      responseBody.message += ' - Key shares created and ready for distribution';
+    }
+    
     if (process.env.NODE_ENV !== 'production') {
       const issuer = process.env.AUTH0_ISSUER_BASE_URL || '';
       const clientId = process.env.AUTH0_CLIENT_ID || '';

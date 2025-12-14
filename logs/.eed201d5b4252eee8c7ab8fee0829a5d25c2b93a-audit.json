@@ -6,19 +6,14 @@
     "auditLog": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/.eed201d5b4252eee8c7ab8fee0829a5d25c2b93a-audit.json",
     "files": [
         {
-            "date": 1763731518553,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/error-2025-11-21.log",
-            "hash": "ab45f01791f76d5f137d16553f422578fcb66cf0b2485c9778299b3edaa4c792"
+            "date": 1765464658768,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/error-2025-12-11.log",
+            "hash": "406460d6df00a90e628baaa3f529118b1e82baac94e912ac48f14399dcd388f7"
         },
         {
-            "date": 1764234844505,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/error-2025-11-27.log",
-            "hash": "d9210a96281ce8fc477c3b7f6f232cf984edc65e6eb98b63136aeb62a4716327"
-        },
-        {
-            "date": 1764313340078,
-            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/error-2025-11-28.log",
-            "hash": "1412d54c70d5a62b1c610ce9fe18c06f50932123c148f2700a70a9dae6790bb1"
+            "date": 1765556959058,
+            "name": "/Users/madhu/Documents/projects/semaphore-oauth-demo/logs/error-2025-12-12.log",
+            "hash": "43d30164b29a9c8f8de426160c7ada2a0b01185c13a628042d589a15eb23470f"
         }
     ],
     "hashType": "sha256"

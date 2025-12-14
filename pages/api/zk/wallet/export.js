@@ -1,4 +1,4 @@
-import { generateDeterministicWallet } from '../../../../lib/semaphore/identity.js';
+import { generateDeterministicWallet } from '@semaphore-oauth/sdk';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 import crypto from 'crypto';
 

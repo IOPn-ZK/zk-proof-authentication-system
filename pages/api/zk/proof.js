@@ -1,6 +1,4 @@
-import { generateProofWithSetup } from '../../../lib/semaphore/proof.js';
-import { Group } from '@semaphore-protocol/group';
-import { retrieveIdentity } from '../../../lib/semaphore/identity.js';
+import { generateProofWithSetup, retrieveIdentity, Group } from '@semaphore-oauth/sdk';
 import { getFullGroupData } from '../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../lib/security/middleware.js';
 
@@ -89,11 +87,20 @@ async function handler(req, res) {
 
     // Generate ZK proof
     console.log('Generating ZK proof...');
+    const path = await import('path');
+    const publicDir = path.join(process.cwd(), 'public', 'semaphore', groupData.treeDepth.toString());
+    const wasmPath = path.join(publicDir, 'semaphore.wasm');
+    const zkeyPath = path.join(publicDir, 'semaphore.zkey');
+    
     const fullProof = await generateProofWithSetup(
       identity, 
       group, 
       BigInt(signal), 
-      BigInt(externalNullifier)
+      BigInt(externalNullifier),
+      {
+        wasmPath,
+        zkeyPath
+      }
     );
 
     console.log('ZK proof generated successfully');

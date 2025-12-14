@@ -3,7 +3,7 @@ import { withSecurityConfig } from '../../../lib/security/middleware.js';
 import { isNullifierUsed, markNullifierUsed } from '../../../lib/db/nullifierService.js';
 import { logProofVerification } from '../../../lib/db/proofLogService.js';
 import { storeVerifiedProof } from '../../../lib/db/proofStorageService.js';
-import { generateDeterministicWallet } from '../../../lib/semaphore/identity.js';
+import { generateDeterministicWallet } from '@semaphore-oauth/sdk';
 
 async function handler(req, res) {
   let proofStatus = 'invalid';

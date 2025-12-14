@@ -1,1 +1,0 @@
-{"error":"duplicate key value violates unique constraint \"user_sessions_session_id_unique\"","level":"error","message":"DB session upsert failed","service":"semaphore-oauth-demo","sessionId":"e6f79820-835b-4ef6-a9db-37d066293984","timestamp":"2025-11-27T10:09:15.818Z"}

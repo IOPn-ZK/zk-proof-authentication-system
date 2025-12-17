@@ -49,13 +49,13 @@ async function createKeySharesTable() {
       CREATE INDEX IF NOT EXISTS "key_shares_user_id_idx" ON "key_shares" ("user_id");
     `);
     
-    console.log('✅ key_shares table created successfully!');
+    console.log(' key_shares table created successfully!');
     
   } catch (error) {
     if (error.code === '42P07') {
-      console.log('ℹ️  key_shares table already exists');
+      console.log('key_shares table already exists');
     } else {
-      console.error('❌ Error creating table:', error.message);
+      console.error('Error creating table:', error.message);
       throw error;
     }
   } finally {

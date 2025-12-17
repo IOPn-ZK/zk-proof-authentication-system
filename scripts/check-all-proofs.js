@@ -33,7 +33,7 @@ async function checkAllProofs() {
     await printNullifiers();
     await printWalletBindings();
     
-    console.log('✅ Query completed!\n');
+    console.log(' Query completed!\n');
     
   } catch (error) {
     console.error('❌ Error querying database:', error);

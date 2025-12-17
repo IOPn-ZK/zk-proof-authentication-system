@@ -66,7 +66,7 @@ async function handler(req, res) {
             // Verify integrity
             if (verifyShareIntegrity(decryptedShareB, shareRecord.shareHash)) {
               providedShares.push(decryptedShareB);
-              console.log(`[SHARE_COMBINE] ✅ Share B retrieved and verified from server`);
+              console.log(`[SHARE_COMBINE]  Share B retrieved and verified from server`);
             } else {
               console.error(`[SHARE_COMBINE] ❌ Share B integrity verification failed`);
               return res.status(500).json({
@@ -98,7 +98,7 @@ async function handler(req, res) {
     const startTime = Date.now();
     const reconstructedKey = combineShares(providedShares);
     const duration = Date.now() - startTime;
-    console.log(`[SHARE_COMBINE] ✅ Private key reconstructed successfully in ${duration}ms`);
+    console.log(`[SHARE_COMBINE]  Private key reconstructed successfully in ${duration}ms`);
     console.log(`[SHARE_COMBINE] Key prefix: 0x${reconstructedKey.substring(0, 16)}...`);
     
     // Return reconstructed key (client should use immediately and discard)

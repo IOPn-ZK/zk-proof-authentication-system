@@ -56,7 +56,7 @@ async function handler(req, res) {
       const { deviceShareHash } = req.body;
       
       if (!deviceShareHash) {
-        console.warn(`[SHARE_SERVER] ⚠️  Device share hash missing`);
+        console.warn(`[SHARE_SERVER]   Device share hash missing`);
         return res.status(400).json({
           success: false,
           message: 'Device share hash required for verification',
@@ -90,7 +90,7 @@ async function handler(req, res) {
         });
       }
       
-      console.log(`[SHARE_SERVER] ✅ Share B retrieved and verified (hash: ${shareRecord.shareHash.substring(0, 16)}...)`);
+      console.log(`[SHARE_SERVER]  Share B retrieved and verified (hash: ${shareRecord.shareHash.substring(0, 16)}...)`);
       
       // Return decrypted share (client will combine with device share)
       return res.status(200).json({

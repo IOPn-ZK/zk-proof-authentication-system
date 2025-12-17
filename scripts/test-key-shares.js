@@ -8,11 +8,11 @@
 import { splitPrivateKey, combineShares } from '../lib/security/keyShareService.js';
 import crypto from 'crypto';
 
-console.log('🧪 Testing Key-Share Splitting Implementation\n');
+console.log('Testing Key-Share Splitting Implementation\n');
 console.log('='.repeat(60));
 
 // Test 1: Basic splitting and combining
-console.log('\n📦 Test 1: Basic Splitting and Combining');
+console.log('\nTest 1: Basic Splitting and Combining');
 console.log('-'.repeat(60));
 
 const testPrivateKey = '0x' + '1'.repeat(64); // 32 bytes (256 bits)
@@ -24,61 +24,61 @@ console.log('Key length:', normalizedKey.length, 'hex chars (', normalizedKey.le
 try {
   // Split into 3 shares with threshold 2
   const shares = splitPrivateKey(testPrivateKey, 3, 2);
-  console.log('✅ Shares created:', shares.length);
+  console.log(' Shares created:', shares.length);
   console.log('   Share A (Index 1):', shares[0].substring(0, 30) + '...');
   console.log('   Share B (Index 2):', shares[1].substring(0, 30) + '...');
   console.log('   Share C (Index 3):', shares[2].substring(0, 30) + '...');
   
   // Test all combinations
-  console.log('\n🔄 Testing Share Combinations:');
+  console.log('\nTesting Share Combinations:');
   
   // A + B
   const keyAB = combineShares([shares[0], shares[1]]);
   const matchAB = keyAB === normalizedKey;
-  console.log('   A + B:', matchAB ? '✅ MATCH' : '❌ MISMATCH');
+  console.log('   A + B:', matchAB ? ' MATCH' : ' MISMATCH');
   
   // A + C
   const keyAC = combineShares([shares[0], shares[2]]);
   const matchAC = keyAC === normalizedKey;
-  console.log('   A + C:', matchAC ? '✅ MATCH' : '❌ MISMATCH');
+  console.log('   A + C:', matchAC ? ' MATCH' : ' MISMATCH');
   
   // B + C
   const keyBC = combineShares([shares[1], shares[2]]);
   const matchBC = keyBC === normalizedKey;
-  console.log('   B + C:', matchBC ? '✅ MATCH' : '❌ MISMATCH');
+  console.log('   B + C:', matchBC ? ' MATCH' : ' MISMATCH');
   
   if (matchAB && matchAC && matchBC) {
-    console.log('\n✅ All combinations successful!');
+    console.log('\n All combinations successful!');
   } else {
-    console.log('\n❌ Some combinations failed!');
+    console.log('\n Some combinations failed!');
     process.exit(1);
   }
   
 } catch (error) {
-  console.error('❌ Test 1 failed:', error.message);
+  console.error(' Test 1 failed:', error.message);
   process.exit(1);
 }
 
 // Test 2: Security - Single share should fail
-console.log('\n🔒 Test 2: Security - Single Share Rejection');
+console.log('\n Test 2: Security - Single Share Rejection');
 console.log('-'.repeat(60));
 
 try {
   const shares = splitPrivateKey(testPrivateKey, 3, 2);
   combineShares([shares[0]]);
-  console.log('❌ ERROR: Single share should fail!');
+  console.log(' ERROR: Single share should fail!');
   process.exit(1);
 } catch (error) {
   if (error.message.includes('at least 2 shares')) {
-    console.log('✅ Single share correctly rejected:', error.message);
+    console.log(' Single share correctly rejected:', error.message);
   } else {
-    console.log('❌ Unexpected error:', error.message);
+    console.log(' Unexpected error:', error.message);
     process.exit(1);
   }
 }
 
 // Test 3: Security - Corrupted share should fail
-console.log('\n🔒 Test 3: Security - Corrupted Share Detection');
+console.log('\n Test 3: Security - Corrupted Share Detection');
 console.log('-'.repeat(60));
 
 try {
@@ -87,12 +87,12 @@ try {
   const reconstructed = combineShares([corruptedShare, shares[1]]);
   
   if (reconstructed === normalizedKey) {
-    console.log('⚠️  WARNING: Corrupted share was accepted (may be acceptable in some schemes)');
+    console.log('  WARNING: Corrupted share was accepted (may be acceptable in some schemes)');
   } else {
-    console.log('✅ Corrupted share detected - reconstruction failed');
+    console.log(' Corrupted share detected - reconstruction failed');
   }
 } catch (error) {
-  console.log('✅ Corrupted share correctly rejected:', error.message);
+  console.log(' Corrupted share correctly rejected:', error.message);
 }
 
 // Test 4: Different key sizes
@@ -112,14 +112,14 @@ for (let i = 0; i < testKeys.length; i++) {
     const normalized = testKeys[i].startsWith('0x') ? testKeys[i].slice(2) : testKeys[i];
     const normalizedRecon = reconstructed.length === 64 ? reconstructed : reconstructed.padStart(64, '0');
     const match = normalizedRecon === normalized.padStart(64, '0').slice(0, 64);
-    console.log(`   Key ${i + 1} (${testKeys[i].length - 2} hex chars):`, match ? '✅' : '❌');
+    console.log(`   Key ${i + 1} (${testKeys[i].length - 2} hex chars):`, match ? '' : '');
   } catch (error) {
-    console.log(`   Key ${i + 1}: ❌ Error -`, error.message);
+    console.log(`   Key ${i + 1}: Error -`, error.message);
   }
 }
 
 // Test 5: Random key generation
-console.log('\n🎲 Test 5: Random Key Generation');
+console.log('\n Test 5: Random Key Generation');
 console.log('-'.repeat(60));
 
 try {
@@ -131,7 +131,7 @@ try {
   const normalized = randomKey.slice(2);
   const match = reconstructed === normalized;
   
-  console.log('Reconstruction:', match ? '✅ MATCH' : '❌ MISMATCH');
+  console.log('Reconstruction:', match ? ' MATCH' : ' MISMATCH');
   
   if (!match) {
     console.log('Expected:', normalized.substring(0, 32) + '...');
@@ -139,15 +139,15 @@ try {
     process.exit(1);
   }
 } catch (error) {
-  console.error('❌ Test 5 failed:', error.message);
+  console.error(' Test 5 failed:', error.message);
   process.exit(1);
 }
 
 // Summary
 console.log('\n' + '='.repeat(60));
-console.log('✅ All tests passed!');
+console.log(' All tests passed!');
 console.log('='.repeat(60));
-console.log('\n📝 Next steps:');
+console.log('\n Next steps:');
 console.log('   1. Run database migration: npm run db:migrate');
 console.log('   2. Test with real Auth0 login');
 console.log('   3. Test API endpoints with authenticated session');

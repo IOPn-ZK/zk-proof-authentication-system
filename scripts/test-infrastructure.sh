@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🧪 Testing Infrastructure Components..."
+echo "Testing Infrastructure Components..."
 echo "======================================"
 
 # Colors for output
@@ -17,9 +17,9 @@ NC='\033[0m' # No Color
 # Function to print status
 print_status() {
     if [ $1 -eq 0 ]; then
-        echo -e "${GREEN}✅ $2${NC}"
+        echo -e "${GREEN} $2${NC}"
     else
-        echo -e "${RED}❌ $2${NC}"
+        echo -e "${RED}$2${NC}"
         if [ ! -z "$3" ]; then
             echo -e "${YELLOW}Details: $3${NC}"
         fi
@@ -35,14 +35,14 @@ wait_for_service() {
     echo -n "Waiting for service at $url... "
     while [ $attempt -le $max_attempts ]; do
         if curl -s "$url" > /dev/null 2>&1; then
-            echo "✅ Ready!"
+            echo " Ready!"
             return 0
         fi
         echo -n "."
         sleep 1
         attempt=$((attempt + 1))
     done
-    echo "❌ Timeout!"
+    echo "Timeout!"
     return 1
 }
 
@@ -209,23 +209,23 @@ print_status 0 "Performance test completed in ${DURATION}s"
 
 # Final summary
 echo ""
-echo "🎉 Infrastructure Testing Complete!"
+echo "Infrastructure Testing Complete!"
 echo "=================================="
 
 # Count Redis keys
 REDIS_KEYS=$(redis-cli keys "semaphore:*" | wc -l)
-echo "📊 Redis keys: $REDIS_KEYS"
+echo "Redis keys: $REDIS_KEYS"
 
 # Count log files
 LOG_FILES=$(ls logs/ 2>/dev/null | wc -l)
-echo "📝 Log files: $LOG_FILES"
+echo "Log files: $LOG_FILES"
 
 # Check queue stats
 QUEUE_SUMMARY=$(curl -s http://localhost:3000/api/monitoring/queue-stats | jq -r '. | to_entries | map("\(.key): \(.value)") | join(", ")' 2>/dev/null || echo "unavailable")
-echo "📋 Queue stats: $QUEUE_SUMMARY"
+echo "Queue stats: $QUEUE_SUMMARY"
 
 echo ""
-echo "✅ All infrastructure components are working!"
-echo "🌐 Access the application at: http://localhost:3000"
-echo "🔧 Access admin dashboard at: http://localhost:3000/admin"
-echo "📊 Monitor health at: http://localhost:3000/api/health/status"
+echo " All infrastructure components are working!"
+echo "Access the application at: http://localhost:3000"
+echo "Access admin dashboard at: http://localhost:3000/admin"
+echo "Monitor health at: http://localhost:3000/api/health/status"

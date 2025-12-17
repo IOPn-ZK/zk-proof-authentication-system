@@ -64,7 +64,7 @@ function Home() {
       }
       
       setWalletAddress(data.walletAddress);
-      addLog(`✅ Wallet generated: ${data.walletAddress}`);
+      addLog(`Wallet generated: ${data.walletAddress}`);
       addLog(`Identity commitment: ${data.identityCommitment}`);
       addLog('Wallet abstraction complete - ready for ZK Semaphore');
       setCurrentStep(1);
@@ -111,7 +111,7 @@ function Home() {
         setExportedPrivateKey(null);
         setExportedSeed(null);
         setHideCountdown(30);
-        addLog('🔒 Private key and seed hidden for security (30s timeout)');
+        addLog('Private key and seed hidden for security (30s timeout)');
       }, 30000); // 30 seconds
 
       return () => {
@@ -144,27 +144,27 @@ function Home() {
       }
       
       setServerIdentity(data.identityCommitment);
-      addLog(`✅ Semaphore identity initialized: ${data.identityCommitment}`);
+      addLog(` Semaphore identity initialized: ${data.identityCommitment}`);
       addLog(`Identity commitment stored for proof generation`);
       
       // Handle key shares if they were just created (client-side only)
       if (data.sharesCreated && data.shares && typeof window !== 'undefined' && user?.sub) {
         try {
-          addLog('🔐 Key shares created - storing Share A in device...');
+          addLog('Key shares created - storing Share A in device...');
           // Dynamic import for client-side only
           const { storeDeviceShare } = await import('../lib/security/deviceStorage.js');
           await storeDeviceShare(user.sub, data.shares.shareA);
-          addLog('✅ Share A stored securely in device storage');
-          addLog(`📦 Share C ready for cloud backup: ${data.shares.shareC.substring(0, 20)}...`);
-          addLog('⚠️  Note: Share C should be encrypted and uploaded to Google Drive');
+          addLog('Share A stored securely in device storage');
+          addLog(`Share C ready for cloud backup: ${data.shares.shareC.substring(0, 20)}...`);
+          addLog('Note: Share C should be encrypted and uploaded to Google Drive');
           setPendingCloudShare(data.shares.shareC);
           setCloudBackupStatus('Share C ready. Add a backup password and upload to Google Drive.');
         } catch (shareError) {
           console.error('Error storing Share A:', shareError);
-          addLog(`⚠️  Warning: Could not store Share A: ${shareError.message}`);
+          addLog(`Warning: Could not store Share A: ${shareError.message}`);
         }
       } else if (data.sharesCreated === false) {
-        addLog('ℹ️  Key shares already exist for this user');
+        addLog('Key shares already exist for this user');
       }
       
       setCurrentStep(2);
@@ -356,7 +356,7 @@ function Home() {
         setVerificationResult('Proof verification failed');
         addLog(`Proof verification failed: ${verifyData.error || 'Invalid proof'}`);
         if (verifyData.error === 'REUSED_NULLIFIER') {
-          addLog('⚠️ This proof was already used - replay prevention working!');
+          addLog('This proof was already used - replay prevention working!');
         }
       }
     } catch (error) {
@@ -458,7 +458,7 @@ function Home() {
       // Hide seed if it was showing
       setShowSeed(false);
       setExportedSeed(null);
-      addLog('✅ Private key exported and decrypted');
+      addLog(' Private key exported and decrypted');
     } catch (error) {
       console.error('Error exporting private key:', error);
       addLog(`Error: ${error.message}`);
@@ -504,7 +504,7 @@ function Home() {
       // Hide private key if it was showing
       setShowPrivateKey(false);
       setExportedPrivateKey(null);
-      addLog('✅ Seed exported and decrypted');
+      addLog(' Seed exported and decrypted');
     } catch (error) {
       console.error('Error exporting seed:', error);
       addLog(`Error: ${error.message}`);
@@ -517,7 +517,7 @@ function Home() {
   const copyToClipboard = async (text, label) => {
     try {
       await navigator.clipboard.writeText(text);
-      addLog(`✅ ${label} copied to clipboard`);
+      addLog(` ${label} copied to clipboard`);
     } catch (error) {
       console.error('Failed to copy:', error);
       addLog(`Error copying ${label}`);
@@ -582,9 +582,9 @@ function Home() {
       if (!metadataResponse.ok || !metadata.success) {
         throw new Error(metadata.message || 'Failed to store cloud backup metadata');
       }
-      addLog(`✅ Share C uploaded to Google Drive file ${uploadResult.fileName || uploadResult.fileId}`);
-      addLog('📁 Cloud backup metadata stored successfully');
-      setCloudBackupStatus('✅ Share C encrypted, uploaded, and recorded. You can now safely close this session.');
+      addLog(` Share C uploaded to Google Drive file ${uploadResult.fileName || uploadResult.fileId}`);
+      addLog('Cloud backup metadata stored successfully');
+      setCloudBackupStatus(' Share C encrypted, uploaded, and recorded. You can now safely close this session.');
       setPendingCloudShare(null);
       setCloudBackupPassword('');
     } catch (error) {
@@ -738,7 +738,7 @@ function Home() {
                     </p>
                     {walletAddress ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                        <h3 className="text-green-800 font-semibold mb-2">✅ Wallet Generated Successfully</h3>
+                        <h3 className="text-green-800 font-semibold mb-2"> Wallet Generated Successfully</h3>
                         <p className="text-green-700 text-sm mb-2">Your deterministic wallet address:</p>
                         <p className="text-sm font-mono text-green-800 bg-green-100 p-2 rounded break-all">{walletAddress}</p>
                       </div>

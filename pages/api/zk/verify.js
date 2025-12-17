@@ -82,7 +82,7 @@ async function handler(req, res) {
       console.log('Nullifier check result:', isUsed ? 'ALREADY USED' : 'NOT USED');
       
       if (isUsed) {
-        console.warn(`⚠️ Replay attack detected: Nullifier ${nullifierHash.substring(0, 16)}... already used`);
+        console.warn(` Replay attack detected: Nullifier ${nullifierHash.substring(0, 16)}... already used`);
         proofStatus = 'reused_nullifier';
         
         // Log the replay attempt
@@ -105,7 +105,7 @@ async function handler(req, res) {
         });
       }
     } else {
-      console.warn('⚠️ No nullifier found in proof! Replay prevention cannot work without nullifier.');
+      console.warn(' No nullifier found in proof! Replay prevention cannot work without nullifier.');
       console.log('Proof structure:', JSON.stringify(fullProof, (key, value) => 
         typeof value === 'bigint' ? value.toString() : value, 2).substring(0, 500));
     }
@@ -167,16 +167,16 @@ async function handler(req, res) {
           );
           
           if (stored) {
-            console.log(`✅ Verified proof stored for wallet ${walletAddress.substring(0, 10)}...`);
+            console.log(` Verified proof stored for wallet ${walletAddress.substring(0, 10)}...`);
           } else {
-            console.warn(`⚠️ Failed to store verified proof (may already exist)`);
+            console.warn(` Failed to store verified proof (may already exist)`);
           }
         } catch (error) {
           console.error('❌ Error storing verified proof:', error);
           // Don't fail verification if storage fails, but log it
         }
       } else {
-        console.warn('⚠️ Cannot store proof: missing wallet address or identity commitment');
+        console.warn(' Cannot store proof: missing wallet address or identity commitment');
       }
       
       // Mark nullifier as used (prevent future reuse)
@@ -196,9 +196,9 @@ async function handler(req, res) {
         );
         
         if (marked) {
-          console.log(`✅ Nullifier ${nullifierHash.substring(0, 16)}... marked as used`);
+          console.log(` Nullifier ${nullifierHash.substring(0, 16)}... marked as used`);
         } else {
-          console.warn(`⚠️ Failed to mark nullifier as used (may already exist)`);
+          console.warn(` Failed to mark nullifier as used (may already exist)`);
         }
       } catch (error) {
         console.error('❌ Error marking nullifier as used:', error);
@@ -210,7 +210,7 @@ async function handler(req, res) {
         // Don't fail the verification if nullifier storage fails, but log it
       }
     } else if (isValid && !nullifierHash) {
-      console.warn('⚠️ Proof is valid but no nullifier found - cannot prevent replay attacks!');
+      console.warn(' Proof is valid but no nullifier found - cannot prevent replay attacks!');
     }
     
     // STEP 4: Log the verification attempt

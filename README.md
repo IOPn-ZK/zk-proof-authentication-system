@@ -21,7 +21,7 @@ A Next.js application demonstrating zero-knowledge proof authentication using Se
 
 ```bash
 git clone <repository-url>
-cd semaphore-oauth-demo
+cd semaphore-zk-oauth
 npm install
 ```
 
@@ -123,7 +123,7 @@ The application will be available at `http://localhost:3000`
 ## Project Structure
 
 ```
-semaphore-oauth-demo/
+semaphore-zk-oauth/
 ├── pages/
 │   ├── api/           # API endpoints
 │   │   ├── auth/      # Auth0 authentication

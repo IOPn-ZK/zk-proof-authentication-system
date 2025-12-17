@@ -2,12 +2,17 @@
 
 A Next.js application demonstrating zero-knowledge proof authentication using Semaphore protocol and Auth0 OAuth.
 
+This project includes both:
+- **Next.js Demo Application**: Full-featured web application with OAuth integration
+- **SDK Package** (`@semaphore-oauth/sdk`): Reusable npm package for Semaphore + OAuth functionality
+
 ## Features
 
 - **OAuth Authentication**: Secure login with Google via Auth0
 - **Zero-Knowledge Proofs**: Generate and verify Semaphore proofs
 - **Group Management**: Add/remove members from Semaphore groups
 - **Deterministic Identities**: HKDF-based identity generation for consistent user experience
+- **SDK Package**: Framework-agnostic SDK for integrating Semaphore + OAuth into any project
 
 ## Prerequisites
 
@@ -120,19 +125,56 @@ The application will be available at `http://localhost:3000`
 - `/api/debug-auth` - Debug authentication status
 - `/api/security/status` - Check security middleware status
 
+## SDK Package
+
+This project includes a reusable SDK package located in `packages/semaphore-sdk/`. The SDK provides:
+
+- Deterministic identity generation from OAuth identifiers
+- Wallet generation from OAuth identifiers
+- Group management with configurable storage adapters
+- Zero-knowledge proof generation
+- Security utilities (encryption, hashing)
+
+### Using the SDK
+
+```bash
+# Install the SDK
+npm install @semaphore-oauth/sdk
+```
+
+```javascript
+import { generateDeterministicIdentity, generateDeterministicWallet } from '@semaphore-oauth/sdk';
+
+const identity = generateDeterministicIdentity(auth0Sub, appSecret);
+const wallet = generateDeterministicWallet(auth0Sub, appSecret);
+```
+
+See `packages/semaphore-sdk/README.md` and `packages/semaphore-sdk/EXAMPLES.md` for detailed documentation.
+
+### Publishing the SDK
+
+```bash
+cd packages/semaphore-sdk
+npm run build
+npm publish
+```
+
 ## Project Structure
 
 ```
-semaphore-zk-oauth/
+semaphore-oauth-demo/
+├── packages/
+│   └── semaphore-sdk/  # SDK package (npm package)
+│       ├── src/        # Source code
+│       ├── dist/        # Built files
+│       └── README.md    # SDK documentation
 ├── pages/
 │   ├── api/           # API endpoints
 │   │   ├── auth/      # Auth0 authentication
 │   │   ├── zk/        # Zero-knowledge proof endpoints
 │   │   └── security/  # Security and status endpoints
 │   └── index.js       # Main application page
-├── lib/
-│   ├── semaphore/     # Semaphore protocol utilities
-│   └── security/      # Security middleware and utilities
+├── lib/               # Application-specific utilities (uses SDK)
 ├── data/              # Application data storage
 └── public/            # Static assets
 ```

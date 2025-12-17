@@ -1,0 +1,63 @@
+{
+  "name": "@semaphore-oauth/sdk",
+  "version": "1.0.0",
+  "description": "SDK for Semaphore protocol with OAuth integration - deterministic identity generation, group management, and zero-knowledge proofs",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./semaphore": {
+      "import": "./dist/semaphore/index.js",
+      "require": "./dist/semaphore/index.cjs",
+      "types": "./dist/semaphore/index.d.ts"
+    },
+    "./security": {
+      "import": "./dist/security/index.js",
+      "require": "./dist/security/index.cjs",
+      "types": "./dist/security/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs && npm run build:types",
+    "build:esm": "node scripts/build-esm.js",
+    "build:cjs": "node scripts/build-cjs.js",
+    "build:types": "node scripts/build-types.js",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "semaphore",
+    "zero-knowledge",
+    "zk-proof",
+    "oauth",
+    "identity",
+    "privacy",
+    "cryptography"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@semaphore-protocol/group": "^3.15.2",
+    "@semaphore-protocol/identity": "^3.15.2",
+    "@semaphore-protocol/proof": "^3.15.2",
+    "ethers": "^6.15.0"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

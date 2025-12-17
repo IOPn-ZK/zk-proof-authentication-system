@@ -8,7 +8,7 @@ dotenv.config();
 
 async function checkAllProofs() {
   try {
-    console.log('\n🔍 Checking all verified proofs in database...\n');
+    console.log('\nChecking all verified proofs in database...\n');
     
     // Check database connection
     const isConnected = await checkDatabaseConnection();
@@ -36,7 +36,7 @@ async function checkAllProofs() {
     console.log(' Query completed!\n');
     
   } catch (error) {
-    console.error('❌ Error querying database:', error);
+    console.error('Error querying database:', error);
     process.exit(1);
   } finally {
     await pool.end();

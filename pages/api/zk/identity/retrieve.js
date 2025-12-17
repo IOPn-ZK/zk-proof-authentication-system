@@ -1,4 +1,4 @@
-import { retrieveIdentity } from '../../../../lib/semaphore/identity.js';
+import { retrieveIdentity } from '@semaphore-oauth/sdk';
 import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 

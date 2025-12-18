@@ -1,6 +1,6 @@
 import { getVerifiedProofsByWallet, getVerifiedProofsByIdentity } from '../../../../lib/db/proofStorageService.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
-import { generateDeterministicWallet } from '@semaphore-oauth/sdk';
+import { generateDeterministicWallet } from '@iopn-zk/zk-proof-authentication-sdk';
 
 /**
  * API endpoint to list verified proofs for the current user's wallet

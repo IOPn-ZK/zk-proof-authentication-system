@@ -1,4 +1,4 @@
-import { retrieveIdentity } from '@semaphore-oauth/sdk';
+import { retrieveIdentity } from '@iopn-zk/zk-proof-authentication-sdk';
 import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 

@@ -1,4 +1,4 @@
-import { generateProofWithSetup, retrieveIdentity, Group } from '@semaphore-oauth/sdk';
+import { generateProofWithSetup, retrieveIdentity, Group } from '@iopn-zk/zk-proof-authentication-sdk';
 import { getFullGroupData } from '../../../lib/db/groupService.js';
 import { withSecurityConfig } from '../../../lib/security/middleware.js';
 

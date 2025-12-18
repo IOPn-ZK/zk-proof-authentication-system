@@ -1,4 +1,4 @@
-import { generateDeterministicWallet, generateDeterministicIdentityWithWallet } from '@semaphore-oauth/sdk';
+import { generateDeterministicWallet, generateDeterministicIdentityWithWallet } from '@iopn-zk/zk-proof-authentication-sdk';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 
 /**

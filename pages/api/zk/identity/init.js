@@ -1,4 +1,4 @@
-import { generateDeterministicIdentity } from '@semaphore-oauth/sdk';
+import { generateDeterministicIdentity } from '@iopn-zk/zk-proof-authentication-sdk';
 import { setSessionIdentity } from '../../../../lib/security/session.js';
 import { withSecurityConfig } from '../../../../lib/security/middleware.js';
 import { splitPrivateKey, encryptShareForServer } from '../../../../lib/security/keyShareService.js';

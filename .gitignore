@@ -45,6 +45,7 @@ out
 *.log
 *.log.*
 *.gz
+*.tgz  
 .vscode/
 .idea/
 *.swp

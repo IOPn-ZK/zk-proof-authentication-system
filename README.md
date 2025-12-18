@@ -1,36 +1,82 @@
-# Semaphore + OAuth Demo
+# ZK Proof Authentication System
 
 A Next.js application demonstrating zero-knowledge proof authentication using Semaphore protocol and Auth0 OAuth.
 
 This project includes both:
 - **Next.js Demo Application**: Full-featured web application with OAuth integration
-- **SDK Package** (`@semaphore-oauth/sdk`): Reusable npm package for Semaphore + OAuth functionality
+- **SDK Package** (`@iopn-zk/zk-proof-authentication-sdk`): Reusable npm package for ZK proof authentication
+
+## Published SDK Package
+
+The SDK is available as an npm package:
+
+**Package:** [`@iopn-zk/zk-proof-authentication-sdk`](https://www.npmjs.com/package/@iopn-zk/zk-proof-authentication-sdk)
+
+```bash
+npm install @iopn-zk/zk-proof-authentication-sdk
+```
 
 ## Features
 
 - **OAuth Authentication**: Secure login with Google via Auth0
 - **Zero-Knowledge Proofs**: Generate and verify Semaphore proofs
-- **Group Management**: Add/remove members from Semaphore groups
+- **Group Management**: Add/remove members from Semaphore groups (PostgreSQL-backed)
 - **Deterministic Identities**: HKDF-based identity generation for consistent user experience
-- **SDK Package**: Framework-agnostic SDK for integrating Semaphore + OAuth into any project
+- **Key Share Management**: 2-of-3 Shamir Secret Sharing for secure key storage
+- **Wallet Integration**: Deterministic Ethereum wallet generation from OAuth identifiers
+- **Database Storage**: PostgreSQL storage for groups, proofs, key shares, and audit logs
+- **SDK Package**: Framework-agnostic SDK published to npm
 
 ## Prerequisites
 
 - Node.js 18+ 
 - npm or yarn
+- PostgreSQL database
 - Auth0 account and application
+- Redis (optional, for queue management)
 
 ## Setup Instructions
 
 ### 1. Clone and Install Dependencies
 
 ```bash
-git clone <repository-url>
-cd semaphore-zk-oauth
+git clone https://github.com/IOPn-ZK/zk-proof-authentication-system.git
+cd zk-proof-authentication-system
 npm install
 ```
 
-### 2. Environment Configuration
+### 2. Database Setup
+
+#### PostgreSQL Database
+
+Create a PostgreSQL database:
+
+```bash
+# Using psql
+createdb semaphore_oauth_demo
+
+# Or using SQL
+psql -U postgres
+CREATE DATABASE semaphore_oauth_demo;
+```
+
+#### Run Migrations
+
+```bash
+npm run db:migrate
+```
+
+This will create all necessary tables:
+- `groups` - Semaphore group metadata
+- `group_members` - Group member commitments
+- `key_shares` - Encrypted key shares (2-of-3 Shamir)
+- `verified_proofs` - Successfully verified ZK proofs
+- `nullifiers` - Replay attack prevention
+- `proof_logs` - Proof verification audit logs
+- `user_sessions` - User session data
+- `audit_log` - Security audit trail
+
+### 3. Environment Configuration
 
 Create a `.env.local` file in the root directory with the following variables:
 
@@ -42,6 +88,20 @@ AUTH0_ISSUER_BASE_URL=https://your-domain.auth0.com
 AUTH0_CLIENT_ID=your-auth0-client-id
 AUTH0_CLIENT_SECRET=your-auth0-client-secret
 
+# Database Configuration (REQUIRED)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=semaphore_oauth_demo
+DB_USER=postgres
+DB_PASSWORD=your-database-password
+DB_SSL=false
+
+# Redis Configuration (OPTIONAL - for queue management)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
 # Encryption (OPTIONAL - will generate one if not provided)
 ENCRYPTION_KEY=your-32-character-encryption-key-here
 
@@ -49,7 +109,7 @@ ENCRYPTION_KEY=your-32-character-encryption-key-here
 NODE_ENV=development
 ```
 
-### 3. Auth0 Application Setup
+### 4. Auth0 Application Setup
 
 1. Go to [Auth0 Dashboard](https://manage.auth0.com/)
 2. Create a new application (Regular Web Application)
@@ -60,7 +120,7 @@ NODE_ENV=development
 4. Enable Google as a social connection
 5. Copy the Client ID and Client Secret to your `.env.local`
 
-### 4. Generate Required Secrets
+### 5. Generate Required Secrets
 
 #### AUTH0_SECRET
 Generate a long, random secret:
@@ -82,7 +142,7 @@ openssl rand -hex 16
 node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 ```
 
-### 5. Run the Application
+### 6. Run the Application
 
 ```bash
 # Development mode
@@ -135,34 +195,10 @@ This project includes a reusable SDK package located in `packages/semaphore-sdk/
 - Zero-knowledge proof generation
 - Security utilities (encryption, hashing)
 
-### Using the SDK
-
-```bash
-# Install the SDK
-npm install @semaphore-oauth/sdk
-```
-
-```javascript
-import { generateDeterministicIdentity, generateDeterministicWallet } from '@semaphore-oauth/sdk';
-
-const identity = generateDeterministicIdentity(auth0Sub, appSecret);
-const wallet = generateDeterministicWallet(auth0Sub, appSecret);
-```
-
-See `packages/semaphore-sdk/README.md` and `packages/semaphore-sdk/EXAMPLES.md` for detailed documentation.
-
-### Publishing the SDK
-
-```bash
-cd packages/semaphore-sdk
-npm run build
-npm publish
-```
-
 ## Project Structure
 
 ```
-semaphore-oauth-demo/
+zk-proof-authentication-system/
 ├── packages/
 │   └── semaphore-sdk/  # SDK package (npm package)
 │       ├── src/        # Source code

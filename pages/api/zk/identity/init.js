@@ -58,10 +58,20 @@ async function handler(req, res) {
     console.log('Deterministic identity created successfully');
     
     // Check if shares already exist
-    const sharesExist = await hasKeyShares(auth0Sub);
+    let sharesExist = false;
+    let dbAvailable = true;
+    
+    try {
+      sharesExist = await hasKeyShares(auth0Sub);
+    } catch (error) {
+      console.warn('Error checking for existing shares, assuming none exist:', error.message);
+      sharesExist = false;
+      dbAvailable = false;
+    }
     
     let shareA = null;
     let shareC = null;
+    let serverShareStored = false;
     
     if (!sharesExist) {
       // Split private key into 3 shares (2-of-3 threshold)
@@ -71,15 +81,26 @@ async function handler(req, res) {
       // Share A (Index 1): Device - will be sent to client for local storage
       shareA = shares[0];
       
-      // Share B (Index 2): Server - encrypt and store in database
+      // Share B (Index 2): Server - encrypt and store in database (if available)
       const { encryptedShare, shareHash } = encryptShareForServer(shares[1]);
-      await storeServerShare(auth0Sub, encryptedShare, shareHash);
-      console.log('Server share stored successfully');
+      try {
+        const stored = await storeServerShare(auth0Sub, encryptedShare, shareHash);
+        if (stored) {
+          serverShareStored = true;
+          console.log('Server share stored successfully');
+        } else {
+          console.warn('Server share could not be stored (database unavailable), but shares will still be returned to client');
+          dbAvailable = false;
+        }
+      } catch (error) {
+        console.warn('Failed to store server share, but continuing:', error.message);
+        dbAvailable = false;
+      }
       
       // Share C (Index 3): Cloud Backup - will be sent to client for encryption and upload
       shareC = shares[2];
       
-      console.log('Key shares created and distributed');
+      console.log('Key shares created and distributed', { serverShareStored, dbAvailable });
     } else {
       console.log('Key shares already exist for user, skipping share creation');
     }
@@ -102,7 +123,8 @@ async function handler(req, res) {
       success: true,
       identityCommitment: identity.commitment.toString(),
       message: 'Deterministic identity created using HKDF',
-      sharesCreated: !sharesExist
+      sharesCreated: !sharesExist,
+      dbAvailable: dbAvailable
     };
     
     // Only return shares if they were just created (first time setup)
@@ -111,7 +133,13 @@ async function handler(req, res) {
         shareA: shareA, // Device share - client should store locally
         shareC: shareC  // Cloud backup share - client should encrypt and upload
       };
-      responseBody.message += ' - Key shares created and ready for distribution';
+      
+      if (serverShareStored) {
+        responseBody.message += ' - Key shares created and ready for distribution';
+      } else {
+        responseBody.message += ' - Key shares created (server share not stored - database unavailable)';
+        responseBody.warning = 'Server share could not be stored in database. Please ensure database is configured for full functionality.';
+      }
     }
     
     if (process.env.NODE_ENV !== 'production') {

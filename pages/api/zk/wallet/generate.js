@@ -12,13 +12,7 @@ import { withSecurityConfig } from '../../../../lib/security/middleware.js';
  */
 async function handler(req, res) {
   try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ 
-        success: false, 
-        message: 'Method not allowed' 
-      });
-    }
-
+    // Method is already validated by security middleware, no need to check again
     // Session is already validated by security middleware
     if (!req.session || !req.session.user) {
       return res.status(401).json({

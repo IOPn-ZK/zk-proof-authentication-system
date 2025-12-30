@@ -135,14 +135,12 @@ async function handler(req, res) {
         fs.mkdirSync(tmpDir, { recursive: true });
         
         // Get base URL for downloading files
-        let baseUrl;
-        if (process.env.VERCEL_URL) {
-          baseUrl = `https://${process.env.VERCEL_URL}`;
-        } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-          baseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-        } else {
-          // Fallback to the known production URL
-          baseUrl = 'https://zk-proof-authentication-system.vercel.app';
+        // Use production URL always (preview deployments require auth)
+        let baseUrl = 'https://zk-proof-authentication-system.vercel.app';
+        
+        // Or use CDN if configured (recommended for production)
+        if (process.env.WASM_CDN_URL) {
+          baseUrl = process.env.WASM_CDN_URL;
         }
         
         const wasmUrl = `${baseUrl}/semaphore/${depth}/semaphore.wasm`;

@@ -120,10 +120,18 @@ async function handler(req, res) {
         }
       }
       
-      // If files not found, download from public URL
-      if (!found) {
+      // If files not found, check /tmp first (might have been downloaded previously)
+      const tmpDir = path.join('/tmp', 'semaphore', depth);
+      const tmpWasm = path.join(tmpDir, 'semaphore.wasm');
+      const tmpZkey = path.join(tmpDir, 'semaphore.zkey');
+      
+      if (fs.existsSync(tmpWasm) && fs.existsSync(tmpZkey)) {
+        wasmPath = tmpWasm;
+        zkeyPath = tmpZkey;
+        console.log('Found files in /tmp (cached)');
+      } else if (!found) {
+        // Download from public URL
         console.log('Files not found locally, downloading from public URL...');
-        const tmpDir = path.join('/tmp', 'semaphore', depth);
         fs.mkdirSync(tmpDir, { recursive: true });
         
         // Get base URL for downloading files
@@ -140,29 +148,49 @@ async function handler(req, res) {
         const wasmUrl = `${baseUrl}/semaphore/${depth}/semaphore.wasm`;
         const zkeyUrl = `${baseUrl}/semaphore/${depth}/semaphore.zkey`;
         
+        console.log('Attempting to download from:', { wasmUrl, zkeyUrl, baseUrl });
+        
         // Use native fetch (Node 18+ has it, Vercel uses Node 18+)
         const fetch = globalThis.fetch;
         
         try {
           console.log('Downloading WASM from:', wasmUrl);
           const wasmResponse = await fetch(wasmUrl);
-          if (!wasmResponse.ok) throw new Error(`Failed to download WASM: ${wasmResponse.statusText}`);
+          console.log('WASM response status:', wasmResponse.status, wasmResponse.statusText);
+          
+          if (!wasmResponse.ok) {
+            const errorText = await wasmResponse.text().catch(() => '');
+            throw new Error(`Failed to download WASM (${wasmResponse.status}): ${wasmResponse.statusText}. ${errorText.substring(0, 200)}`);
+          }
+          
           const wasmArrayBuffer = await wasmResponse.arrayBuffer();
           const wasmBuffer = Buffer.from(wasmArrayBuffer);
           wasmPath = path.join(tmpDir, 'semaphore.wasm');
           fs.writeFileSync(wasmPath, wasmBuffer);
-          console.log('✓ Downloaded WASM file');
+          console.log(`✓ Downloaded WASM file (${wasmBuffer.length} bytes)`);
           
           console.log('Downloading zkey from:', zkeyUrl);
           const zkeyResponse = await fetch(zkeyUrl);
-          if (!zkeyResponse.ok) throw new Error(`Failed to download zkey: ${zkeyResponse.statusText}`);
+          console.log('zkey response status:', zkeyResponse.status, zkeyResponse.statusText);
+          
+          if (!zkeyResponse.ok) {
+            const errorText = await zkeyResponse.text().catch(() => '');
+            throw new Error(`Failed to download zkey (${zkeyResponse.status}): ${zkeyResponse.statusText}. ${errorText.substring(0, 200)}`);
+          }
+          
           const zkeyArrayBuffer = await zkeyResponse.arrayBuffer();
           const zkeyBuffer = Buffer.from(zkeyArrayBuffer);
           zkeyPath = path.join(tmpDir, 'semaphore.zkey');
           fs.writeFileSync(zkeyPath, zkeyBuffer);
-          console.log('✓ Downloaded zkey file');
+          console.log(`✓ Downloaded zkey file (${zkeyBuffer.length} bytes)`);
         } catch (downloadError) {
           console.error('Failed to download files:', downloadError);
+          console.error('Download error details:', {
+            message: downloadError.message,
+            stack: downloadError.stack,
+            wasmUrl,
+            zkeyUrl
+          });
           throw new Error(`Could not access WASM files. Tried downloading from ${wasmUrl}: ${downloadError.message}`);
         }
       }
@@ -187,31 +215,71 @@ async function handler(req, res) {
     
     console.log('Using trusted setup files:', { wasmPath, zkeyPath });
     
-    const fullProof = await generateProofWithSetup(
-      identity, 
-      group, 
-      BigInt(signal), 
-      BigInt(externalNullifier),
-      {
-        wasmPath,
-        zkeyPath
-      }
-    );
-
-    console.log('ZK proof generated successfully');
-    res.status(200).json({
-      success: true,
-      proof: fullProof,
-      message: 'Proof generated successfully'
+    // Verify files exist and are readable
+    const wasmStats = fs.statSync(wasmPath);
+    const zkeyStats = fs.statSync(zkeyPath);
+    console.log('File stats:', {
+      wasmSize: wasmStats.size,
+      zkeySize: zkeyStats.size,
+      wasmReadable: fs.constants.R_OK ? 'yes' : 'no'
     });
+    
+    try {
+      console.log('Calling generateProofWithSetup...');
+      const fullProof = await generateProofWithSetup(
+        identity, 
+        group, 
+        BigInt(signal), 
+        BigInt(externalNullifier),
+        {
+          wasmPath,
+          zkeyPath
+        }
+      );
+
+      console.log('ZK proof generated successfully');
+      console.log('Proof structure:', {
+        hasProof: !!fullProof?.proof,
+        hasNullifier: !!fullProof?.nullifier,
+        hasMerkleRoot: !!fullProof?.merkleRoot
+      });
+      
+      res.status(200).json({
+        success: true,
+        proof: fullProof,
+        message: 'Proof generated successfully'
+      });
+    } catch (proofError) {
+      console.error('Error in generateProofWithSetup:', proofError);
+      console.error('Proof error details:', {
+        message: proofError.message,
+        stack: proofError.stack,
+        wasmPath,
+        zkeyPath,
+        wasmExists: fs.existsSync(wasmPath),
+        zkeyExists: fs.existsSync(zkeyPath)
+      });
+      throw proofError;
+    }
 
   } catch (error) {
     console.error('Error generating proof:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Don't send response if headers already sent
+    if (res.headersSent) {
+      console.warn('Cannot send error response, headers already sent');
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to generate proof',
       error: 'PROOF_GENERATION_ERROR',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      details: process.env.NODE_ENV === 'development' || process.env.VERCEL 
+        ? error.message 
+        : 'Internal server error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }

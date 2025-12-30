@@ -88,9 +88,64 @@ async function handler(req, res) {
     // Generate ZK proof
     console.log('Generating ZK proof...');
     const path = await import('path');
-    const publicDir = path.join(process.cwd(), 'public', 'semaphore', groupData.treeDepth.toString());
-    const wasmPath = path.join(publicDir, 'semaphore.wasm');
-    const zkeyPath = path.join(publicDir, 'semaphore.zkey');
+    const fs = await import('fs');
+    
+    // Get file paths - handle both local and Vercel environments
+    let wasmPath, zkeyPath;
+    
+    if (process.env.VERCEL) {
+      // In Vercel serverless, try multiple possible locations
+      const basePaths = [
+        path.join('/var/task', 'public'),
+        path.join('/var/task', '.next', 'static'),
+        path.join(process.cwd(), 'public'),
+      ];
+      
+      const depth = groupData.treeDepth.toString();
+      let found = false;
+      
+      for (const base of basePaths) {
+        const testWasm = path.join(base, 'semaphore', depth, 'semaphore.wasm');
+        const testZkey = path.join(base, 'semaphore', depth, 'semaphore.zkey');
+        
+        if (fs.existsSync(testWasm) && fs.existsSync(testZkey)) {
+          wasmPath = testWasm;
+          zkeyPath = testZkey;
+          found = true;
+          console.log('Found files in:', base);
+          break;
+        }
+      }
+      
+      if (!found) {
+        // Fallback: use expected path (files should be included in build)
+        const fallbackDir = path.join('/var/task', 'public', 'semaphore', depth);
+        wasmPath = path.join(fallbackDir, 'semaphore.wasm');
+        zkeyPath = path.join(fallbackDir, 'semaphore.zkey');
+        console.warn('Files not found in expected locations, using fallback:', fallbackDir);
+      }
+    } else {
+      // Local development
+      const publicDir = path.join(process.cwd(), 'public', 'semaphore', groupData.treeDepth.toString());
+      wasmPath = path.join(publicDir, 'semaphore.wasm');
+      zkeyPath = path.join(publicDir, 'semaphore.zkey');
+    }
+    
+    // Verify files exist
+    if (!fs.existsSync(wasmPath)) {
+      const errorMsg = `WASM file not found at: ${wasmPath}. ` +
+        `In Vercel, ensure public/semaphore/${groupData.treeDepth}/ files are included in deployment.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    if (!fs.existsSync(zkeyPath)) {
+      const errorMsg = `zkey file not found at: ${zkeyPath}. ` +
+        `In Vercel, ensure public/semaphore/${groupData.treeDepth}/ files are included in deployment.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    console.log('Using trusted setup files:', { wasmPath, zkeyPath });
     
     const fullProof = await generateProofWithSetup(
       identity, 

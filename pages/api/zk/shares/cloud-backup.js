@@ -54,24 +54,63 @@ async function handler(req, res) {
       }
       
       // Store cloud backup metadata
-      const metadata = await storeCloudBackupMetadata(
-        auth0Sub,
-        cloudBackupUrl,
-        shareHash,
-        true, // isEncrypted
-        null, // userId
-        null  // tenantId
-      );
+      let metadata = null;
+      let dbError = null;
       
-      return res.status(200).json({
-        success: true,
-        message: 'Cloud backup metadata stored successfully',
-        metadata: {
-          cloudBackupUrl: metadata.cloudBackupUrl,
-          shareHash: metadata.shareHash,
-          createdAt: metadata.createdAt
-        }
-      });
+      try {
+        metadata = await storeCloudBackupMetadata(
+          auth0Sub,
+          cloudBackupUrl,
+          shareHash,
+          true, // isEncrypted
+          null, // userId
+          null  // tenantId
+        );
+      } catch (error) {
+        console.error('Error storing cloud backup metadata:', error);
+        dbError = error.message;
+        metadata = null;
+      }
+      
+      if (!metadata) {
+        // Database unavailable or error, but we can still acknowledge the backup
+        return res.status(200).json({
+          success: true,
+          message: 'Cloud backup received (metadata not stored - database unavailable)',
+          warning: 'Database is not available. Backup URL was received but not persisted. Please ensure database is configured for full functionality.',
+          metadata: {
+            cloudBackupUrl: cloudBackupUrl,
+            shareHash: shareHash,
+            stored: false
+          },
+          ...(dbError && { dbError: process.env.NODE_ENV === 'development' ? dbError : undefined })
+        });
+      }
+      
+      // Successfully stored - return metadata
+      try {
+        return res.status(200).json({
+          success: true,
+          message: 'Cloud backup metadata stored successfully',
+          metadata: {
+            cloudBackupUrl: metadata.cloudBackupUrl || cloudBackupUrl,
+            shareHash: metadata.shareHash || shareHash,
+            createdAt: metadata.createdAt ? new Date(metadata.createdAt).toISOString() : new Date().toISOString()
+          }
+        });
+      } catch (jsonError) {
+        console.error('Error serializing response:', jsonError);
+        // Fallback response if metadata has issues
+        return res.status(200).json({
+          success: true,
+          message: 'Cloud backup metadata stored successfully',
+          metadata: {
+            cloudBackupUrl: cloudBackupUrl,
+            shareHash: shareHash,
+            stored: true
+          }
+        });
+      }
     }
     
     if (req.method === 'GET') {
@@ -106,6 +145,22 @@ async function handler(req, res) {
     
   } catch (error) {
     console.error('Error in cloud backup handler:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      method: req.method,
+      hasSession: !!req.session,
+      auth0Sub: req.session?.user?.sub
+    });
+    
+    // Don't send response if headers already sent
+    if (res.headersSent) {
+      console.warn('Cannot send error response, headers already sent');
+      return;
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Internal server error',

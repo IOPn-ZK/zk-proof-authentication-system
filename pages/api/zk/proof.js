@@ -89,18 +89,20 @@ async function handler(req, res) {
     console.log('Generating ZK proof...');
     const path = await import('path');
     const fs = await import('fs');
+    const os = await import('os');
     
     // Get file paths - handle both local and Vercel environments
     let wasmPath, zkeyPath;
+    const depth = groupData.treeDepth.toString();
     
     if (process.env.VERCEL) {
       // In Vercel serverless, try multiple possible locations
-      const depth = groupData.treeDepth.toString();
       const basePaths = [
         path.join('/var/task', '.next', 'server', 'public', 'semaphore', depth),
         path.join('/var/task', 'public', 'semaphore', depth),
         path.join('/var/task', '.next', 'static', 'semaphore', depth),
         path.join(process.cwd(), 'public', 'semaphore', depth),
+        path.join('/tmp', 'semaphore', depth), // Fallback to /tmp
       ];
       
       let found = false;
@@ -118,30 +120,67 @@ async function handler(req, res) {
         }
       }
       
+      // If files not found, download from public URL
       if (!found) {
-        // Fallback: use expected path
-        const fallbackDir = path.join('/var/task', 'public', 'semaphore', depth);
-        wasmPath = path.join(fallbackDir, 'semaphore.wasm');
-        zkeyPath = path.join(fallbackDir, 'semaphore.zkey');
-        console.warn('Files not found in expected locations, using fallback:', fallbackDir);
+        console.log('Files not found locally, downloading from public URL...');
+        const tmpDir = path.join('/tmp', 'semaphore', depth);
+        fs.mkdirSync(tmpDir, { recursive: true });
+        
+        // Get base URL for downloading files
+        let baseUrl;
+        if (process.env.VERCEL_URL) {
+          baseUrl = `https://${process.env.VERCEL_URL}`;
+        } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+          baseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+        } else {
+          // Fallback to the known production URL
+          baseUrl = 'https://zk-proof-authentication-system.vercel.app';
+        }
+        
+        const wasmUrl = `${baseUrl}/semaphore/${depth}/semaphore.wasm`;
+        const zkeyUrl = `${baseUrl}/semaphore/${depth}/semaphore.zkey`;
+        
+        // Use native fetch (Node 18+ has it, Vercel uses Node 18+)
+        const fetch = globalThis.fetch;
+        
+        try {
+          console.log('Downloading WASM from:', wasmUrl);
+          const wasmResponse = await fetch(wasmUrl);
+          if (!wasmResponse.ok) throw new Error(`Failed to download WASM: ${wasmResponse.statusText}`);
+          const wasmArrayBuffer = await wasmResponse.arrayBuffer();
+          const wasmBuffer = Buffer.from(wasmArrayBuffer);
+          wasmPath = path.join(tmpDir, 'semaphore.wasm');
+          fs.writeFileSync(wasmPath, wasmBuffer);
+          console.log('✓ Downloaded WASM file');
+          
+          console.log('Downloading zkey from:', zkeyUrl);
+          const zkeyResponse = await fetch(zkeyUrl);
+          if (!zkeyResponse.ok) throw new Error(`Failed to download zkey: ${zkeyResponse.statusText}`);
+          const zkeyArrayBuffer = await zkeyResponse.arrayBuffer();
+          const zkeyBuffer = Buffer.from(zkeyArrayBuffer);
+          zkeyPath = path.join(tmpDir, 'semaphore.zkey');
+          fs.writeFileSync(zkeyPath, zkeyBuffer);
+          console.log('✓ Downloaded zkey file');
+        } catch (downloadError) {
+          console.error('Failed to download files:', downloadError);
+          throw new Error(`Could not access WASM files. Tried downloading from ${wasmUrl}: ${downloadError.message}`);
+        }
       }
     } else {
       // Local development
-      const publicDir = path.join(process.cwd(), 'public', 'semaphore', groupData.treeDepth.toString());
+      const publicDir = path.join(process.cwd(), 'public', 'semaphore', depth);
       wasmPath = path.join(publicDir, 'semaphore.wasm');
       zkeyPath = path.join(publicDir, 'semaphore.zkey');
     }
     
     // Verify files exist
     if (!fs.existsSync(wasmPath)) {
-      const errorMsg = `WASM file not found at: ${wasmPath}. ` +
-        `In Vercel, ensure public/semaphore/${groupData.treeDepth}/ files are included in deployment.`;
+      const errorMsg = `WASM file not found at: ${wasmPath}`;
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
     if (!fs.existsSync(zkeyPath)) {
-      const errorMsg = `zkey file not found at: ${zkeyPath}. ` +
-        `In Vercel, ensure public/semaphore/${groupData.treeDepth}/ files are included in deployment.`;
+      const errorMsg = `zkey file not found at: ${zkeyPath}`;
       console.error(errorMsg);
       throw new Error(errorMsg);
     }

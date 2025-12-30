@@ -95,30 +95,31 @@ async function handler(req, res) {
     
     if (process.env.VERCEL) {
       // In Vercel serverless, try multiple possible locations
+      const depth = groupData.treeDepth.toString();
       const basePaths = [
-        path.join('/var/task', 'public'),
-        path.join('/var/task', '.next', 'static'),
-        path.join(process.cwd(), 'public'),
+        path.join('/var/task', '.next', 'server', 'public', 'semaphore', depth),
+        path.join('/var/task', 'public', 'semaphore', depth),
+        path.join('/var/task', '.next', 'static', 'semaphore', depth),
+        path.join(process.cwd(), 'public', 'semaphore', depth),
       ];
       
-      const depth = groupData.treeDepth.toString();
       let found = false;
       
-      for (const base of basePaths) {
-        const testWasm = path.join(base, 'semaphore', depth, 'semaphore.wasm');
-        const testZkey = path.join(base, 'semaphore', depth, 'semaphore.zkey');
+      for (const testDir of basePaths) {
+        const testWasm = path.join(testDir, 'semaphore.wasm');
+        const testZkey = path.join(testDir, 'semaphore.zkey');
         
         if (fs.existsSync(testWasm) && fs.existsSync(testZkey)) {
           wasmPath = testWasm;
           zkeyPath = testZkey;
           found = true;
-          console.log('Found files in:', base);
+          console.log('Found files in:', testDir);
           break;
         }
       }
       
       if (!found) {
-        // Fallback: use expected path (files should be included in build)
+        // Fallback: use expected path
         const fallbackDir = path.join('/var/task', 'public', 'semaphore', depth);
         wasmPath = path.join(fallbackDir, 'semaphore.wasm');
         zkeyPath = path.join(fallbackDir, 'semaphore.zkey');

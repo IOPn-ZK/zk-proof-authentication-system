@@ -1,8 +1,9 @@
 {
   "functions": {
     "pages/api/**/*.js": {
-      "includeFiles": "public/**/*"
+      "includeFiles": "public/semaphore/**/*"
     }
-  }
+  },
+  "buildCommand": "npm run build"
 }
 

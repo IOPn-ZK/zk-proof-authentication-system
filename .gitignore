@@ -75,8 +75,7 @@ lerna-debug.log*
 
 # Semaphore trusted setup files (large binary files)
 .semaphore-setup/
-public/semaphore/**/*.wasm
-public/semaphore/**/*.zkey
+# Note: public/semaphore/**/*.wasm and *.zkey are NOT ignored - they're needed for Vercel deployment
 
 # Vercel
 .vercel
